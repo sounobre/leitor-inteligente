@@ -1,0 +1,188 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: library
+    description: Books and study materials
+  - name: study
+    description: Study sessions and progress
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /books:
+    get:
+      operationId: listBooks
+      tags: [library]
+      summary: List books in the library
+      responses:
+        "200":
+          description: Books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Book"
+    post:
+      operationId: importBook
+      tags: [library]
+      summary: Import a book or article
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportBookRequest"
+      responses:
+        "201":
+          description: Imported book
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+  /books/{bookId}:
+    get:
+      operationId: getBook
+      tags: [library]
+      summary: Get a book with its study plan
+      parameters:
+        - $ref: "#/components/parameters/BookId"
+      responses:
+        "200":
+          description: Book detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookDetail"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [study]
+      summary: Get study dashboard summary
+      responses:
+        "200":
+          description: Dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+components:
+  parameters:
+    BookId:
+      name: bookId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Book:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        author: { type: string }
+        sourceType: { type: string, enum: [EPUB, ARTICLE] }
+        status: { type: string, enum: [READY, PROCESSING, DRAFT] }
+        level: { type: string }
+        progress: { type: number }
+        coverColor: { type: string }
+        updatedAt: { type: string }
+      required: [id, title, author, sourceType, status, level, progress, coverColor, updatedAt]
+    BookDetail:
+      allOf:
+        - $ref: "#/components/schemas/Book"
+        - type: object
+          properties:
+            plan:
+              $ref: "#/components/schemas/StudyPlan"
+            chapters:
+              type: array
+              items:
+                $ref: "#/components/schemas/Chapter"
+          required: [plan, chapters]
+    Chapter:
+      type: object
+      properties:
+        id: { type: string }
+        position: { type: number, description: Chapter order, integer: true }
+        title: { type: string }
+        content: { type: string }
+        wordCount: { type: number, description: Number of words in the chapter, integer: true }
+      required: [id, position, title, content, wordCount]
+    StudyPlan:
+      type: object
+      properties:
+        vocabulary:
+          type: array
+          items: { $ref: "#/components/schemas/StudyItem" }
+        idioms:
+          type: array
+          items: { $ref: "#/components/schemas/StudyItem" }
+        phrasalVerbs:
+          type: array
+          items: { $ref: "#/components/schemas/StudyItem" }
+      required: [vocabulary, idioms, phrasalVerbs]
+    StudyItem:
+      type: object
+      properties:
+        term: { type: string }
+        meaning: { type: string }
+        example: { type: string }
+        pronunciation: { type: string }
+        difficulty: { type: string }
+      required: [term, meaning, example, pronunciation, difficulty]
+    ImportBookRequest:
+      type: object
+      properties:
+        title: { type: string }
+        author: { type: string }
+        sourceType: { type: string, enum: [EPUB, ARTICLE] }
+        content:
+          type: string
+          description: For EPUB, a base64 data URL containing the complete file. For ARTICLE, the article URL.
+        fileName:
+          type: string
+          description: Original EPUB file name, used to validate the upload.
+        ollamaEndpoint:
+          type: string
+          description: Local Ollama base URL.
+        ollamaModel:
+          type: string
+          description: Ollama model used to prepare the plan.
+      required: [title, author, sourceType, content, ollamaEndpoint, ollamaModel]
+    Dashboard:
+      type: object
+      properties:
+        minutesToday: { type: number }
+        streak: { type: number }
+        wordsLearned: { type: number }
+        currentBook:
+          $ref: "#/components/schemas/Book"
+      required: [minutesToday, streak, wordsLearned, currentBook]
+

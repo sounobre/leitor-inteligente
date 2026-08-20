@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Leitor Inteligente"
+description = "Aplicativo local para importar livros em inglês, gerar preparação de leitura com IA e estudar vocabulário, expressões idiomáticas e phrasal verbs no computador."
+version = "1.0.0"
+id = "artifacts/leitor-inteligente"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22131
+
+[services.development]
+run = "pnpm --filter @workspace/leitor-inteligente run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/leitor-inteligente", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/leitor-inteligente/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22131"
+BASE_PATH = "/"

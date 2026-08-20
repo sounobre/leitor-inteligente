@@ -1,0 +1,27 @@
+kind = "api"
+previewPath = "/api"
+title = "API Server"
+version = "1.0.0"
+id = "3B4_FFSkEVBkAeYMFRJ2e"
+
+[[services]]
+localPort = 8080
+name = "API Server"
+paths = ["/api"]
+
+[services.development]
+run = "SPRING_DATASOURCE_URL=\"jdbc:postgresql://$PGHOST:$PGPORT/$PGDATABASE\" SPRING_DATASOURCE_USERNAME=\"$PGUSER\" SPRING_DATASOURCE_PASSWORD=\"$PGPASSWORD\" JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) mvn -f pom.xml -q spring-boot:run -Dspring-boot.run.arguments=--server.port=$PORT"
+
+[services.production]
+
+[services.production.build]
+args = ["sh", "-c", "cd artifacts/api-server && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) mvn -DskipTests package"]
+
+[services.production.run]
+args = ["java", "-jar", "artifacts/api-server/target/api-server-0.0.1-SNAPSHOT.jar"]
+
+[services.production.run.env]
+PORT = "8080"
+
+[services.production.health.startup]
+path = "/api/healthz"

@@ -1,0 +1,3 @@
+- [Java 21 workflow runtime](java-21-workflow-runtime.md) — Maven needs JAVA_HOME set from the active Java binary or it may run an older bundled JDK.
+- [OpenAPI numeric schema generation](openapi-number-codegen.md) — use number plus integer semantics because the current Zod generator cannot emit z.int().
+- [Active API runtime](active-api-runtime.md) — the API workflow serves Spring Boot; keep runtime behavior aligned with its Java controller, not only the parallel Express scaffold.
