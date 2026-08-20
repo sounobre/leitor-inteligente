@@ -18,6 +18,20 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary List locally installed Ollama models
+ */
+export const ListOllamaModelsQueryParams = zod.object({
+  "endpoint": zod.coerce.string().describe('Base URL of the local Ollama instance.')
+})
+
+export const ListOllamaModelsResponse = zod.object({
+  "models": zod.array(zod.object({
+  "name": zod.string()
+}))
+})
+
+
+/**
  * @summary List books in the library
  */
 export const ListBooksResponseItem = zod.object({

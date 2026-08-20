@@ -28,6 +28,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /ollama/models:
+    get:
+      operationId: listOllamaModels
+      tags: [study]
+      summary: List locally installed Ollama models
+      parameters:
+        - name: endpoint
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Base URL of the local Ollama instance.
+      responses:
+        "200":
+          description: Locally available Ollama models
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OllamaModelCatalog"
   /books:
     get:
       operationId: listBooks
@@ -101,6 +120,22 @@ components:
           type: string
       required:
         - status
+    OllamaModelCatalog:
+      type: object
+      properties:
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/OllamaModel"
+      required:
+        - models
+    OllamaModel:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
     Book:
       type: object
       properties:

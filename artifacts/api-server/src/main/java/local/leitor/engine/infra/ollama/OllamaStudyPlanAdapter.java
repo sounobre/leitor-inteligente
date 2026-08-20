@@ -11,8 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Component;
+import local.leitor.engine.application.port.out.OllamaModelCatalogPort;
 import local.leitor.engine.application.port.out.StudyPlanGeneratorPort;
 import local.leitor.engine.domain.exception.StudyPlanGenerationException;
+import local.leitor.engine.domain.model.OllamaModel;
 import local.leitor.engine.domain.model.StudyItem;
 import local.leitor.engine.domain.model.StudyPlan;
 import local.leitor.shared.domain.BusinessValidationException;
@@ -21,7 +23,7 @@ import local.leitor.shared.domain.BusinessValidationException;
  * Infrastructure adapter that interacts with a local Ollama instance to generate study plans.
  */
 @Component
-public class OllamaStudyPlanAdapter implements StudyPlanGeneratorPort {
+ public class OllamaStudyPlanAdapter implements StudyPlanGeneratorPort, OllamaModelCatalogPort {
     private static final int MAX_PROMPT_CONTENT_LENGTH = 24000;
     private static final Duration HTTP_TIMEOUT = Duration.ofSeconds(120);
 
@@ -87,6 +89,54 @@ public class OllamaStudyPlanAdapter implements StudyPlanGeneratorPort {
             throw ex;
         } catch (Exception ex) {
             throw new StudyPlanGenerationException("Failed to parse study plan response from Ollama", ex);
+        }
+    }
+
+    @Override
+    public List<OllamaModel> listModels(String endpoint) {
+        if (endpoint == null || endpoint.isBlank()) {
+            throw new BusinessValidationException("Ollama endpoint is required");
+        }
+
+        HttpRequest request;
+        try {
+            request = HttpRequest.newBuilder()
+                .uri(URI.create(endpoint.replaceAll("/+$", "") + "/api/tags"))
+                .timeout(Duration.ofSeconds(15))
+                .GET()
+                .build();
+        } catch (Exception ex) {
+            throw new BusinessValidationException("Invalid Ollama endpoint URL: " + endpoint);
+        }
+
+        final HttpResponse<String> response;
+        try {
+            response = http.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (Exception ex) {
+            throw new StudyPlanGenerationException("Could not connect to Ollama at " + endpoint, ex);
+        }
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new StudyPlanGenerationException("Ollama returned HTTP error status: " + response.statusCode());
+        }
+
+        try {
+            JsonNode root = json.readTree(response.body());
+            JsonNode models = root.path("models");
+            if (!models.isArray()) {
+                throw new StudyPlanGenerationException("Ollama returned an invalid model catalog");
+            }
+            List<OllamaModel> result = new ArrayList<>();
+            for (JsonNode model : models) {
+                String name = model.path("name").asText("").trim();
+                if (!name.isBlank()) {
+                    result.add(new OllamaModel(name));
+                }
+            }
+            return result;
+        } catch (StudyPlanGenerationException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new StudyPlanGenerationException("Failed to parse Ollama model catalog", ex);
         }
     }
 

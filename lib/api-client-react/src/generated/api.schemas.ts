@@ -9,6 +9,14 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface OllamaModel {
+  name: string;
+}
+
+export interface OllamaModelCatalog {
+  models: OllamaModel[];
+}
+
 export type BookSourceType = typeof BookSourceType[keyof typeof BookSourceType];
 
 
@@ -95,4 +103,11 @@ export interface Dashboard {
   wordsLearned: number;
   currentBook: Book;
 }
+
+export type ListOllamaModelsParams = {
+/**
+ * Base URL of the local Ollama instance.
+ */
+endpoint: string;
+};
 

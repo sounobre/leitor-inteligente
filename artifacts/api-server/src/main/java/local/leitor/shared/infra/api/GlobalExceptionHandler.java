@@ -11,6 +11,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import local.leitor.shared.domain.BusinessValidationException;
 import local.leitor.shared.domain.DomainException;
 import local.leitor.shared.domain.EntityNotFoundException;
+import local.leitor.engine.domain.exception.StudyPlanGenerationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -47,6 +48,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
         problem.setTitle("Domain Rule Violation");
         problem.setType(URI.create("https://errors.leitor.local/domain-error"));
+        problem.setProperty("timestamp", Instant.now());
+        return problem;
+    }
+
+    @ExceptionHandler(StudyPlanGenerationException.class)
+    public ProblemDetail handleStudyPlanGeneration(StudyPlanGenerationException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, ex.getMessage());
+        problem.setTitle("Ollama Unavailable");
+        problem.setType(URI.create("https://errors.leitor.local/ollama-unavailable"));
         problem.setProperty("timestamp", Instant.now());
         return problem;
     }

@@ -24,7 +24,9 @@ import type {
   BookDetail,
   Dashboard,
   HealthStatus,
-  ImportBookRequest
+  ImportBookRequest,
+  ListOllamaModelsParams,
+  OllamaModelCatalog
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -120,6 +122,90 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getHealthCheckQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListOllamaModelsUrl = (params: ListOllamaModelsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/ollama/models?${stringifiedParams}` : `/api/ollama/models`
+}
+
+/**
+ * @summary List locally installed Ollama models
+ */
+export const listOllamaModels = async (params: ListOllamaModelsParams, options?: Parameters<typeof customFetch>[1]): Promise<OllamaModelCatalog> => {
+
+  return customFetch<OllamaModelCatalog>(getListOllamaModelsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOllamaModelsQueryKey = (params?: ListOllamaModelsParams,) => {
+    return [
+    `/api/ollama/models`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListOllamaModelsQueryOptions = <TData = Awaited<ReturnType<typeof listOllamaModels>>, TError = ErrorType<unknown>>(params: ListOllamaModelsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOllamaModels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOllamaModelsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOllamaModels>>> = ({ signal }) => listOllamaModels(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOllamaModels>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOllamaModelsQueryResult = NonNullable<Awaited<ReturnType<typeof listOllamaModels>>>
+export type ListOllamaModelsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List locally installed Ollama models
+ */
+
+export function useListOllamaModels<TData = Awaited<ReturnType<typeof listOllamaModels>>, TError = ErrorType<unknown>>(
+ params: ListOllamaModelsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOllamaModels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOllamaModelsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

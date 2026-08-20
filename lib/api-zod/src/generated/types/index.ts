@@ -15,5 +15,8 @@ export * from './dashboard';
 export * from './healthStatus';
 export * from './importBookRequest';
 export * from './importBookRequestSourceType';
+export * from './listOllamaModelsParams';
+export * from './ollamaModel';
+export * from './ollamaModelCatalog';
 export * from './studyItem';
 export * from './studyPlan';
