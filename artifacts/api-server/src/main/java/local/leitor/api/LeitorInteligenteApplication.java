@@ -1,11 +1,14 @@
 package local.leitor.api;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+/**
+ * Backwards-compatible entry point for older launch commands.
+ * Use {@link Application} for new integrations.
+ */
+@Deprecated(forRemoval = false)
+public final class LeitorInteligenteApplication {
+  private LeitorInteligenteApplication() {}
 
-@SpringBootApplication
-public class LeitorInteligenteApplication {
   public static void main(String[] args) {
-    SpringApplication.run(LeitorInteligenteApplication.class, args);
+    Application.main(args);
   }
 }
