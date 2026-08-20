@@ -10,7 +10,8 @@ export function LibraryPage() {
   const [filter, setFilter] = useState<Filter>('all');
   const [importOpen, setImportOpen] = useState(false);
   const books = useListBooks({ query: { queryKey: getListBooksQueryKey() } });
-  const filtered = useMemo(() => (books.data ?? []).filter((book) => filter === 'all' || (filter === 'reading' ? book.progress > 0 && book.progress < 100 : book.progress >= 100)), [books.data, filter]);
+  const bookList = Array.isArray(books.data) ? books.data : [];
+  const filtered = useMemo(() => bookList.filter((book) => filter === 'all' || (filter === 'reading' ? book.progress > 0 && book.progress < 100 : book.progress >= 100)), [bookList, filter]);
 
   return <div className="page fade-up">
     <div className="top-row"><div><div className="eyebrow">a tua estante</div><h1 className="page-title">Biblioteca <em>viva.</em></h1><p className="lead">Cada livro aqui tem um próximo passo. Escolhe uma leitura, abre o plano e deixa o inglês aproximar-se.</p></div><button className="button button-primary" onClick={() => setImportOpen(true)} data-testid="button-open-import-library"><FilePlus2 size={16} /> Importar leitura</button></div>

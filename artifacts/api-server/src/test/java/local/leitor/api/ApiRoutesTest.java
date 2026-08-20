@@ -5,56 +5,148 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
-import local.leitor.book.api.BookController;
-import local.leitor.book.application.BookImportService;
-import local.leitor.book.application.BookQueryService;
-import local.leitor.book.domain.Book;
-import local.leitor.health.api.HealthController;
-import local.leitor.study.api.StudyController;
-import local.leitor.study.application.StudyDashboardService;
-import local.leitor.study.application.StudySyncService;
+import local.leitor.book.application.port.in.GetBookDetailUseCase;
+import local.leitor.book.application.port.in.ImportBookUseCase;
+import local.leitor.book.application.port.in.ListBooksUseCase;
+import local.leitor.book.domain.model.Book;
+import local.leitor.book.domain.model.BookId;
+import local.leitor.book.domain.model.BookStatus;
+import local.leitor.book.domain.model.CefrLevel;
+import local.leitor.book.domain.model.SourceType;
+import local.leitor.book.infra.api.BookController;
+import local.leitor.engine.domain.model.StudyPlan;
+import local.leitor.health.infra.api.HealthController;
+import local.leitor.shared.infra.api.GlobalExceptionHandler;
+import local.leitor.study.application.port.in.GetDashboardUseCase;
+import local.leitor.study.application.port.in.SyncStudyPlansUseCase;
+import local.leitor.study.domain.model.DashboardSummary;
+import local.leitor.study.infra.api.StudyController;
 
 @WebMvcTest({BookController.class, StudyController.class, HealthController.class})
+@Import(GlobalExceptionHandler.class)
 class ApiRoutesTest {
-  @Autowired
-  private MockMvc mvc;
 
-  @MockBean
-  private BookQueryService bookQueryService;
+    @Autowired
+    private MockMvc mvc;
 
-  @MockBean
-  private BookImportService bookImportService;
+    @MockBean
+    private ListBooksUseCase listBooksUseCase;
 
-  @MockBean
-  private StudyDashboardService dashboardService;
+    @MockBean
+    private ImportBookUseCase importBookUseCase;
 
-  @MockBean
-  private StudySyncService syncService;
+    @MockBean
+    private GetBookDetailUseCase getBookDetailUseCase;
 
-  @Test
-  void healthRouteStaysAvailable() throws Exception {
-    mvc.perform(get("/api/healthz"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status").value("ok"));
-  }
+    @MockBean
+    private GetDashboardUseCase getDashboardUseCase;
 
-  @Test
-  void booksRouteKeepsItsResponseShape() throws Exception {
-    given(bookQueryService.list()).willReturn(List.of(new Book(
-        "book-1", "The Dispossessed", "Ursula K. Le Guin",
-        "EPUB", "READY", "B2", 0, "#D7F0E5", "2026-08-20T18:00:00Z"
-    )));
+    @MockBean
+    private SyncStudyPlansUseCase syncStudyPlansUseCase;
 
-    mvc.perform(get("/api/books"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].id").value("book-1"))
-        .andExpect(jsonPath("$[0].sourceType").value("EPUB"))
-        .andExpect(jsonPath("$[0].updatedAt").value("2026-08-20T18:00:00Z"));
-  }
+    @Test
+    @DisplayName("GET /api/healthz returns 200 OK with status ok")
+    void healthRouteStaysAvailable() throws Exception {
+        mvc.perform(get("/api/healthz"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("ok"));
+    }
+
+    @Test
+    @DisplayName("GET /api/books returns 200 OK and matches expected JSON contract")
+    void booksRouteKeepsItsResponseShape() throws Exception {
+        Book book = Book.reconstitute(
+            BookId.of("book-1"),
+            "The Dispossessed",
+            "Ursula K. Le Guin",
+            SourceType.EPUB,
+            BookStatus.READY,
+            CefrLevel.B2,
+            0,
+            "#D7F0E5",
+            "",
+            StudyPlan.empty(),
+            Collections.emptyList(),
+            Instant.parse("2026-08-20T18:00:00Z")
+        );
+
+        given(listBooksUseCase.listBooks()).willReturn(List.of(book));
+
+        mvc.perform(get("/api/books"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].id").value("book-1"))
+            .andExpect(jsonPath("$[0].title").value("The Dispossessed"))
+            .andExpect(jsonPath("$[0].author").value("Ursula K. Le Guin"))
+            .andExpect(jsonPath("$[0].sourceType").value("EPUB"))
+            .andExpect(jsonPath("$[0].status").value("READY"))
+            .andExpect(jsonPath("$[0].level").value("B2"))
+            .andExpect(jsonPath("$[0].progress").value(0))
+            .andExpect(jsonPath("$[0].coverColor").value("#D7F0E5"))
+            .andExpect(jsonPath("$[0].updatedAt").value("2026-08-20T18:00:00Z"));
+    }
+
+    @Test
+    @DisplayName("GET /api/dashboard returns 200 OK with metrics and current book")
+    void dashboardRouteWorksProperly() throws Exception {
+        Book book = Book.reconstitute(
+            BookId.of("book-1"),
+            "The Dispossessed",
+            "Ursula K. Le Guin",
+            SourceType.EPUB,
+            BookStatus.READY,
+            CefrLevel.B2,
+            0,
+            "#D7F0E5",
+            "",
+            StudyPlan.empty(),
+            Collections.emptyList(),
+            Instant.parse("2026-08-20T18:00:00Z")
+        );
+
+        given(getDashboardUseCase.getDashboard()).willReturn(new DashboardSummary(18, 4, 47, book));
+
+        mvc.perform(get("/api/dashboard"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.minutesToday").value(18))
+            .andExpect(jsonPath("$.streak").value(4))
+            .andExpect(jsonPath("$.wordsLearned").value(47))
+            .andExpect(jsonPath("$.currentBook.title").value("The Dispossessed"));
+    }
+
+    @Test
+    @DisplayName("GET /api/study/sync returns prepared books list")
+    void studySyncRouteWorksProperly() throws Exception {
+        Book book = Book.reconstitute(
+            BookId.of("book-1"),
+            "The Dispossessed",
+            "Ursula K. Le Guin",
+            SourceType.EPUB,
+            BookStatus.READY,
+            CefrLevel.B2,
+            0,
+            "#D7F0E5",
+            "",
+            StudyPlan.empty(),
+            Collections.emptyList(),
+            Instant.parse("2026-08-20T18:00:00Z")
+        );
+
+        given(syncStudyPlansUseCase.getPreparedBooksForSync()).willReturn(List.of(book));
+
+        mvc.perform(get("/api/study/sync"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.books[0].id").value("book-1"))
+            .andExpect(jsonPath("$.books[0].title").value("The Dispossessed"))
+            .andExpect(jsonPath("$.books[0].plan.vocabulary").isArray());
+    }
 }

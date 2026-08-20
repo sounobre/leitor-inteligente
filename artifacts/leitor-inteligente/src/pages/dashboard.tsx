@@ -19,7 +19,8 @@ export function DashboardPage() {
 
   const data = dashboard.data;
   const current = data?.currentBook;
-  const recent = (books.data ?? []).filter((book) => book.id !== current?.id).slice(0, 3);
+  const bookList = Array.isArray(books.data) ? books.data : [];
+  const recent = bookList.filter((book) => book.id !== current?.id).slice(0, 3);
   return (
     <div className="page fade-up">
       <div className="top-row">
