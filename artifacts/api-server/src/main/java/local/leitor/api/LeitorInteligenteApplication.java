@@ -1,8 +1,10 @@
 package local.leitor.api;
 
+import local.leitor.Application;
+
 /**
  * Backwards-compatible entry point for older launch commands.
- * Use {@link Application} for new integrations.
+ * Use {@link local.leitor.Application} for new integrations.
  */
 @Deprecated(forRemoval = false)
 public final class LeitorInteligenteApplication {
