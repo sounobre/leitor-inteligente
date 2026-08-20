@@ -30,8 +30,8 @@ export default function TabOneScreen() {
           <View><Text style={[styles.heroLabel, { color: colors.primaryForeground }]}>HOJE</Text><Text style={[styles.heroNumber, { color: colors.primaryForeground }]}>{pending}</Text><Text style={[styles.heroSmall, { color: colors.primaryForeground }]}>cartões esperam por você</Text></View>
           <View style={[styles.bookMark, { borderColor: colors.accent }]}><Feather name="book-open" color={colors.accent} size={26} /></View>
         </View>
-        <Pressable onPress={() => { void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/review'); }} style={[styles.heroButton, { backgroundColor: colors.accent }]} testID="start-review">
-          <Text style={[styles.heroButtonText, { color: colors.accentForeground }]}>Começar revisão</Text><Feather name="arrow-up-right" color={colors.accentForeground} size={18} />
+        <Pressable onPress={() => { void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/review'); }} style={[styles.heroButton, { backgroundColor: colors.accent }]} testID="start-preparation">
+          <Text style={[styles.heroButtonText, { color: colors.accentForeground }]}>Abrir preparação</Text><Feather name="arrow-up-right" color={colors.accentForeground} size={18} />
         </Pressable>
       </View>
 

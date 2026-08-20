@@ -182,6 +182,14 @@ components:
         phrasalVerbs:
           type: array
           items: { $ref: "#/components/schemas/StudyItem" }
+        visualCards:
+          type: array
+          items: { $ref: "#/components/schemas/VisualStudyCard" }
+        linguisticDecks:
+          type: array
+          items: { $ref: "#/components/schemas/LinguisticDeck" }
+        semanticMap:
+          $ref: "#/components/schemas/SemanticMap"
       required: [vocabulary, idioms, phrasalVerbs]
     StudyItem:
       type: object
@@ -192,6 +200,51 @@ components:
         pronunciation: { type: string }
         difficulty: { type: string }
       required: [term, meaning, example, pronunciation, difficulty]
+    VisualStudyCard:
+      type: object
+      properties:
+        term: { type: string }
+        meaning: { type: string }
+        example: { type: string }
+        visualCue: { type: string }
+        technique: { type: string }
+        pronunciation: { type: string }
+        difficulty: { type: string }
+      required: [term, meaning, example, visualCue, technique, pronunciation, difficulty]
+    LinguisticDeck:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        purpose: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/StudyItem" }
+      required: [id, title, purpose, items]
+    SemanticMap:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items: { $ref: "#/components/schemas/SemanticNode" }
+        connections:
+          type: array
+          items: { $ref: "#/components/schemas/SemanticConnection" }
+      required: [nodes, connections]
+    SemanticNode:
+      type: object
+      properties:
+        id: { type: string }
+        label: { type: string }
+        description: { type: string }
+      required: [id, label, description]
+    SemanticConnection:
+      type: object
+      properties:
+        fromId: { type: string }
+        toId: { type: string }
+        relationship: { type: string }
+      required: [fromId, toId, relationship]
     ImportBookRequest:
       type: object
       properties:

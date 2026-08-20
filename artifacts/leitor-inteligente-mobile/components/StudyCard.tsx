@@ -27,10 +27,12 @@ export function StudyCard({ card, onToggle }: { card: StudyCardType; onToggle: (
       </View>
       <Text style={[styles.term, { color: colors.foreground }]}>{card.term}</Text>
       <Text style={[styles.pronunciation, { color: colors.primary }]}>{card.pronunciation}</Text>
+      {card.visualCue ? <View style={[styles.visualCue, { backgroundColor: colors.secondary }]}><Feather name="eye" size={15} color={colors.primary} /><Text style={[styles.visualCueText, { color: colors.secondaryForeground }]}>{card.visualCue}</Text></View> : null}
       <Pressable onPress={() => setRevealed((value) => !value)} style={[styles.reveal, { backgroundColor: colors.background }]} testID={`reveal-card-${card.id}`}>
         <Text style={[styles.revealText, { color: colors.foreground }]}>{revealed ? card.translation : 'Toque para revelar'}</Text>
       </Pressable>
       {revealed && <Text style={[styles.example, { color: colors.mutedForeground }]}>{card.example}</Text>}
+      {revealed && card.technique ? <Text style={[styles.technique, { color: colors.primary }]}>{card.technique}</Text> : null}
     </View>
   );
 }
@@ -42,7 +44,10 @@ const styles = StyleSheet.create({
   levelText: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1 },
   term: { fontFamily: 'Inter_700Bold', fontSize: 25, letterSpacing: -0.8, marginTop: 6 },
   pronunciation: { fontFamily: 'Inter_500Medium', fontSize: 12 },
+  visualCue: { marginTop: 10, borderRadius: 14, padding: 12, flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
+  visualCueText: { flex: 1, fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 18 },
   reveal: { borderRadius: 12, padding: 13, marginTop: 12 },
   revealText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, textAlign: 'center' },
   example: { fontFamily: 'Inter_400Regular', fontStyle: 'italic', fontSize: 14, lineHeight: 20, marginTop: 4 },
+  technique: { fontFamily: 'Inter_600SemiBold', fontSize: 11, lineHeight: 16, marginTop: 2 },
 });

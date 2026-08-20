@@ -21,7 +21,7 @@ function NativeTabLayout() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="review">
         <Icon sf={{ default: 'rectangle.stack', selected: 'rectangle.stack.fill' }} />
-        <Label>Revisar</Label>
+        <Label>Preparar</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="library">
         <Icon sf={{ default: 'books.vertical', selected: 'books.vertical.fill' }} />
@@ -87,7 +87,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="review"
         options={{
-          title: 'Revisar',
+          title: 'Preparar',
           tabBarIcon: ({ color }) =>
             isIOS ? <SymbolView name="rectangle.stack" tintColor={color} size={24} /> : <Feather name="layers" size={22} color={color} />,
         }}

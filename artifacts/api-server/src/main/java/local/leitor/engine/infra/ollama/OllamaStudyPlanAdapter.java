@@ -15,8 +15,13 @@ import local.leitor.engine.application.port.out.OllamaModelCatalogPort;
 import local.leitor.engine.application.port.out.StudyPlanGeneratorPort;
 import local.leitor.engine.domain.exception.StudyPlanGenerationException;
 import local.leitor.engine.domain.model.OllamaModel;
+import local.leitor.engine.domain.model.LinguisticDeck;
+import local.leitor.engine.domain.model.SemanticConnection;
+import local.leitor.engine.domain.model.SemanticMap;
+import local.leitor.engine.domain.model.SemanticNode;
 import local.leitor.engine.domain.model.StudyItem;
 import local.leitor.engine.domain.model.StudyPlan;
+import local.leitor.engine.domain.model.VisualStudyCard;
 import local.leitor.shared.domain.BusinessValidationException;
 
 /**
@@ -143,9 +148,25 @@ import local.leitor.shared.domain.BusinessValidationException;
     private String buildPrompt(String content) {
         String truncatedContent = content.substring(0, Math.min(content.length(), MAX_PROMPT_CONTENT_LENGTH));
         return """
-            Create a language study plan from this text. Return ONLY valid JSON with exactly these arrays:
+            Create a spoiler-free language preparation plan for a reader before they start a book.
+            You may analyze the text privately to identify language patterns, difficulty, register, and semantic fields,
+            but you MUST NOT reveal plot facts, character names, locations, events, distinctive details, summaries,
+            or any sentence/excerpt from the text.
+
+            Return ONLY valid JSON with exactly these fields:
             vocabulary, idioms, phrasalVerbs. Each array has up to 8 objects with term, meaning (Portuguese),
-            example, pronunciation, difficulty (CEFR). Use terms present or strongly implied by the text.
+            example, pronunciation, difficulty (CEFR).
+            visualCards: up to 8 objects with term, meaning (Portuguese), example, visualCue, technique,
+            pronunciation, difficulty. Every example MUST be an original neutral sentence written by you, not a quote,
+            paraphrase, or identifiable scene from the text. visualCue must describe an abstract, generic visual memory aid.
+            linguisticDecks: 3 to 5 objects with id, title (Portuguese), purpose (Portuguese), items. Choose broad
+            language goals such as emotion, contrast, description, uncertainty, movement, or cause and consequence.
+            Items use the same fields as vocabulary and must contain only original examples.
+            semanticMap: an object with nodes and connections. Nodes have id, label (English), description (Portuguese).
+            Connections have fromId, toId, relationship (Portuguese). Map broad language concepts, not book events.
+
+            Never use proper names from the text. Never include quotation marks or copied phrases. Use terms present or
+            strongly implied by the text, but make every explanation and example safe before reading.
             TEXT:
             """ + truncatedContent;
     }
@@ -158,8 +179,11 @@ import local.leitor.shared.domain.BusinessValidationException;
         List<StudyItem> vocabulary = parseCategory(root, "vocabulary");
         List<StudyItem> idioms = parseCategory(root, "idioms");
         List<StudyItem> phrasalVerbs = parseCategory(root, "phrasalVerbs");
+        List<VisualStudyCard> visualCards = parseVisualCards(root);
+        List<LinguisticDeck> linguisticDecks = parseLinguisticDecks(root);
+        SemanticMap semanticMap = parseSemanticMap(root);
 
-        return new StudyPlan(vocabulary, idioms, phrasalVerbs);
+        return new StudyPlan(vocabulary, idioms, phrasalVerbs, visualCards, linguisticDecks, semanticMap);
     }
 
     private List<StudyItem> parseCategory(JsonNode root, String categoryName) {
@@ -177,9 +201,100 @@ import local.leitor.shared.domain.BusinessValidationException;
             String difficulty = itemNode.path("difficulty").asText("B2").trim();
 
             if (!term.isBlank() && !meaning.isBlank()) {
-                items.add(new StudyItem(term, meaning, example, pronunciation, difficulty));
+                items.add(new StudyItem(term, meaning, requireOriginalExample(example), pronunciation, difficulty));
             }
         }
         return items;
+    }
+
+    private List<VisualStudyCard> parseVisualCards(JsonNode root) {
+        JsonNode cardsNode = requireArray(root, "visualCards");
+        List<VisualStudyCard> cards = new ArrayList<>();
+        for (JsonNode cardNode : cardsNode) {
+            String term = cardNode.path("term").asText("").trim();
+            String meaning = cardNode.path("meaning").asText("").trim();
+            String example = cardNode.path("example").asText("").trim();
+            if (!term.isBlank() && !meaning.isBlank() && !example.isBlank()) {
+                cards.add(new VisualStudyCard(
+                    term,
+                    meaning,
+                    requireOriginalExample(example),
+                    cardNode.path("visualCue").asText(""),
+                    cardNode.path("technique").asText(""),
+                    cardNode.path("pronunciation").asText(""),
+                    cardNode.path("difficulty").asText("B2")
+                ));
+            }
+        }
+        return cards;
+    }
+
+    private List<LinguisticDeck> parseLinguisticDecks(JsonNode root) {
+        JsonNode decksNode = requireArray(root, "linguisticDecks");
+        List<LinguisticDeck> decks = new ArrayList<>();
+        for (JsonNode deckNode : decksNode) {
+            String id = deckNode.path("id").asText("").trim();
+            String title = deckNode.path("title").asText("").trim();
+            JsonNode itemsNode = deckNode.path("items");
+            if (id.isBlank() || title.isBlank() || !itemsNode.isArray()) {
+                continue;
+            }
+            List<StudyItem> items = new ArrayList<>();
+            for (JsonNode itemNode : itemsNode) {
+                String term = itemNode.path("term").asText("").trim();
+                String meaning = itemNode.path("meaning").asText("").trim();
+                if (!term.isBlank() && !meaning.isBlank()) {
+                    items.add(new StudyItem(
+                        term,
+                        meaning,
+                        requireOriginalExample(itemNode.path("example").asText("")),
+                        itemNode.path("pronunciation").asText(""),
+                        itemNode.path("difficulty").asText("B2")
+                    ));
+                }
+            }
+            decks.add(new LinguisticDeck(id, title, deckNode.path("purpose").asText(""), items));
+        }
+        return decks;
+    }
+
+    private SemanticMap parseSemanticMap(JsonNode root) {
+        JsonNode mapNode = root.path("semanticMap");
+        if (!mapNode.isObject()) {
+            throw new StudyPlanGenerationException("Ollama plan is missing semanticMap object");
+        }
+        List<SemanticNode> nodes = new ArrayList<>();
+        for (JsonNode node : requireArray(mapNode, "nodes")) {
+            String id = node.path("id").asText("").trim();
+            String label = node.path("label").asText("").trim();
+            if (!id.isBlank() && !label.isBlank()) {
+                nodes.add(new SemanticNode(id, label, node.path("description").asText("")));
+            }
+        }
+        List<SemanticConnection> connections = new ArrayList<>();
+        for (JsonNode connection : requireArray(mapNode, "connections")) {
+            String fromId = connection.path("fromId").asText("").trim();
+            String toId = connection.path("toId").asText("").trim();
+            if (!fromId.isBlank() && !toId.isBlank()) {
+                connections.add(new SemanticConnection(fromId, toId, connection.path("relationship").asText("")));
+            }
+        }
+        return new SemanticMap(nodes, connections);
+    }
+
+    private JsonNode requireArray(JsonNode root, String name) {
+        JsonNode node = root.get(name);
+        if (node == null || !node.isArray()) {
+            throw new StudyPlanGenerationException("Ollama plan is missing array category: " + name);
+        }
+        return node;
+    }
+
+    private String requireOriginalExample(String example) {
+        String normalized = example != null ? example.trim() : "";
+        if (normalized.isBlank() || normalized.length() > 220 || normalized.contains("\"") || normalized.contains("“") || normalized.contains("”")) {
+            throw new StudyPlanGenerationException("Study examples must be short original sentences without quotations");
+        }
+        return normalized;
     }
 }

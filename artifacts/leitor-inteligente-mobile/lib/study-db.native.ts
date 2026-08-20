@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-export type Deck = 'vocabulary' | 'idioms' | 'phrasal';
+export type Deck = 'vocabulary' | 'idioms' | 'phrasal' | 'visual';
 export type StudyCard = {
   id: number;
   bookId: string;
@@ -10,6 +10,8 @@ export type StudyCard = {
   example: string;
   pronunciation: string;
   difficulty: string;
+  visualCue: string;
+  technique: string;
   reviewed: number;
 };
 export type StudyBook = {
@@ -17,8 +19,20 @@ export type StudyBook = {
   level: string; progress: number; coverColor: string; updatedAt: string;
 };
 export type StudyPlanItem = { term: string; meaning: string; example: string; pronunciation: string; difficulty: string };
+export type VisualStudyCard = StudyPlanItem & { visualCue: string; technique: string };
+export type LinguisticDeck = { id: string; title: string; purpose: string; items: StudyPlanItem[] };
+export type SemanticNode = { id: string; label: string; description: string };
+export type SemanticConnection = { fromId: string; toId: string; relationship: string };
+export type StudyPlan = {
+  vocabulary: StudyPlanItem[];
+  idioms: StudyPlanItem[];
+  phrasalVerbs: StudyPlanItem[];
+  visualCards: VisualStudyCard[];
+  linguisticDecks: LinguisticDeck[];
+  semanticMap: { nodes: SemanticNode[]; connections: SemanticConnection[] };
+};
 export type PreparedBook = StudyBook & {
-  plan: { vocabulary: StudyPlanItem[]; idioms: StudyPlanItem[]; phrasalVerbs: StudyPlanItem[] };
+  plan: StudyPlan;
 };
 
 let database: SQLite.SQLiteDatabase | null = null;
@@ -35,12 +49,14 @@ export async function initialiseStudyDb() {
     CREATE TABLE IF NOT EXISTS study_books (
       id TEXT PRIMARY KEY, title TEXT NOT NULL, author TEXT NOT NULL,
       source_type TEXT NOT NULL, status TEXT NOT NULL, level TEXT NOT NULL,
-      progress INTEGER NOT NULL DEFAULT 0, cover_color TEXT NOT NULL, updated_at TEXT NOT NULL
+      progress INTEGER NOT NULL DEFAULT 0, cover_color TEXT NOT NULL, updated_at TEXT NOT NULL,
+      plan_json TEXT NOT NULL DEFAULT '{}'
     );
     CREATE TABLE IF NOT EXISTS study_cards (
       id INTEGER PRIMARY KEY AUTOINCREMENT, book_id TEXT NOT NULL REFERENCES study_books(id) ON DELETE CASCADE,
       remote_id TEXT NOT NULL, deck TEXT NOT NULL, term TEXT NOT NULL, translation TEXT NOT NULL,
       example TEXT NOT NULL, pronunciation TEXT NOT NULL, difficulty TEXT NOT NULL,
+      visual_cue TEXT NOT NULL DEFAULT '', technique TEXT NOT NULL DEFAULT '',
       reviewed INTEGER NOT NULL DEFAULT 0, UNIQUE(book_id, remote_id)
     );
   `);
@@ -48,13 +64,16 @@ export async function initialiseStudyDb() {
   // Those rows are removed below instead of being presented as prepared books.
   await db.runAsync('ALTER TABLE study_cards ADD COLUMN book_id TEXT').catch(() => {});
   await db.runAsync('ALTER TABLE study_cards ADD COLUMN remote_id TEXT').catch(() => {});
+  await db.runAsync("ALTER TABLE study_books ADD COLUMN plan_json TEXT NOT NULL DEFAULT '{}'").catch(() => {});
+  await db.runAsync("ALTER TABLE study_cards ADD COLUMN visual_cue TEXT NOT NULL DEFAULT ''").catch(() => {});
+  await db.runAsync("ALTER TABLE study_cards ADD COLUMN technique TEXT NOT NULL DEFAULT ''").catch(() => {});
   await db.runAsync('DELETE FROM study_cards WHERE book_id IS NULL OR remote_id IS NULL');
   await db.execAsync('CREATE UNIQUE INDEX IF NOT EXISTS study_cards_book_remote_idx ON study_cards(book_id, remote_id);');
 }
 
 export async function getCards() {
   const db = await getDb();
-  return db.getAllAsync<StudyCard>('SELECT id, book_id AS bookId, deck, term, translation, example, pronunciation, difficulty, reviewed FROM study_cards ORDER BY reviewed ASC, id ASC');
+  return db.getAllAsync<StudyCard>('SELECT id, book_id AS bookId, deck, term, translation, example, pronunciation, difficulty, visual_cue AS visualCue, technique, reviewed FROM study_cards ORDER BY reviewed ASC, id ASC');
 }
 
 export async function getBooks() {
@@ -62,23 +81,32 @@ export async function getBooks() {
   return db.getAllAsync<StudyBook>('SELECT id, title, author, source_type AS sourceType, status, level, progress, cover_color AS coverColor, updated_at AS updatedAt FROM study_books ORDER BY updated_at DESC');
 }
 
+export async function getPreparedBooks() {
+  const db = await getDb();
+  const rows = await db.getAllAsync<StudyBook & { planJson: string }>('SELECT id, title, author, source_type AS sourceType, status, level, progress, cover_color AS coverColor, updated_at AS updatedAt, plan_json AS planJson FROM study_books ORDER BY updated_at DESC');
+  return rows.map(({ planJson, ...book }) => ({ ...book, plan: normalizePlan(parsePlan(planJson)) }));
+}
+
 export async function savePreparedBooks(books: PreparedBook[]) {
   const db = await getDb();
   await db.withTransactionAsync(async () => {
     for (const book of books) {
+      const plan = normalizePlan(book.plan);
       await db.runAsync(
-        `INSERT INTO study_books (id, title, author, source_type, status, level, progress, cover_color, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO study_books (id, title, author, source_type, status, level, progress, cover_color, updated_at, plan_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET title=excluded.title, author=excluded.author,
          source_type=excluded.source_type, status=excluded.status, level=excluded.level,
-         progress=excluded.progress, cover_color=excluded.cover_color, updated_at=excluded.updated_at`,
+          progress=excluded.progress, cover_color=excluded.cover_color, updated_at=excluded.updated_at,
+          plan_json=excluded.plan_json`,
         book.id, book.title, book.author, book.sourceType, book.status, book.level,
-        book.progress, book.coverColor, book.updatedAt,
+         book.progress, book.coverColor, book.updatedAt, JSON.stringify(plan),
       );
       const cards = [
-        ...book.plan.vocabulary.map((item) => ({ deck: 'vocabulary' as Deck, item })),
-        ...book.plan.idioms.map((item) => ({ deck: 'idioms' as Deck, item })),
-        ...book.plan.phrasalVerbs.map((item) => ({ deck: 'phrasal' as Deck, item })),
+        ...plan.vocabulary.map((item) => ({ deck: 'vocabulary' as Deck, item })),
+        ...plan.idioms.map((item) => ({ deck: 'idioms' as Deck, item })),
+        ...plan.phrasalVerbs.map((item) => ({ deck: 'phrasal' as Deck, item })),
+        ...plan.visualCards.map((item) => ({ deck: 'visual' as Deck, item })),
       ];
       const remoteIds = cards.map(({ deck, item }) => `${deck}:${item.term}`);
       if (remoteIds.length === 0) {
@@ -89,13 +117,13 @@ export async function savePreparedBooks(books: PreparedBook[]) {
       }
       for (const { deck, item } of cards) {
         await db.runAsync(
-          `INSERT INTO study_cards (book_id, remote_id, deck, term, translation, example, pronunciation, difficulty)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO study_cards (book_id, remote_id, deck, term, translation, example, pronunciation, difficulty, visual_cue, technique)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(book_id, remote_id) DO UPDATE SET deck=excluded.deck, term=excluded.term,
            translation=excluded.translation, example=excluded.example, pronunciation=excluded.pronunciation,
-           difficulty=excluded.difficulty`,
+            difficulty=excluded.difficulty, visual_cue=excluded.visual_cue, technique=excluded.technique`,
           book.id, `${deck}:${item.term}`, deck, item.term, item.meaning, item.example,
-          item.pronunciation, item.difficulty,
+           item.pronunciation, item.difficulty, (item as VisualStudyCard).visualCue ?? '', (item as VisualStudyCard).technique ?? '',
         );
       }
     }
@@ -105,4 +133,26 @@ export async function savePreparedBooks(books: PreparedBook[]) {
 export async function toggleCard(id: number, reviewed: boolean) {
   const db = await getDb();
   await db.runAsync('UPDATE study_cards SET reviewed = ? WHERE id = ?', reviewed ? 1 : 0, id);
+}
+
+function parsePlan(value: string): Partial<StudyPlan> {
+  try {
+    return JSON.parse(value) as Partial<StudyPlan>;
+  } catch {
+    return {};
+  }
+}
+
+function normalizePlan(plan: Partial<StudyPlan>): StudyPlan {
+  return {
+    vocabulary: Array.isArray(plan.vocabulary) ? plan.vocabulary : [],
+    idioms: Array.isArray(plan.idioms) ? plan.idioms : [],
+    phrasalVerbs: Array.isArray(plan.phrasalVerbs) ? plan.phrasalVerbs : [],
+    visualCards: Array.isArray(plan.visualCards) ? plan.visualCards : [],
+    linguisticDecks: Array.isArray(plan.linguisticDecks) ? plan.linguisticDecks : [],
+    semanticMap: {
+      nodes: Array.isArray(plan.semanticMap?.nodes) ? plan.semanticMap.nodes : [],
+      connections: Array.isArray(plan.semanticMap?.connections) ? plan.semanticMap.connections : [],
+    },
+  };
 }

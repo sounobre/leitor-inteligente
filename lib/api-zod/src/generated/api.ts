@@ -113,7 +113,40 @@ export const GetBookResponse = zod.object({
   "example": zod.string(),
   "pronunciation": zod.string(),
   "difficulty": zod.string()
+})),
+  "visualCards": zod.array(zod.object({
+  "term": zod.string(),
+  "meaning": zod.string(),
+  "example": zod.string(),
+  "visualCue": zod.string(),
+  "technique": zod.string(),
+  "pronunciation": zod.string(),
+  "difficulty": zod.string()
+})).optional(),
+  "linguisticDecks": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "purpose": zod.string(),
+  "items": zod.array(zod.object({
+  "term": zod.string(),
+  "meaning": zod.string(),
+  "example": zod.string(),
+  "pronunciation": zod.string(),
+  "difficulty": zod.string()
 }))
+})).optional(),
+  "semanticMap": zod.object({
+  "nodes": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "description": zod.string()
+})),
+  "connections": zod.array(zod.object({
+  "fromId": zod.string(),
+  "toId": zod.string(),
+  "relationship": zod.string()
+}))
+}).optional()
 }),
   "chapters": zod.array(zod.object({
   "id": zod.string(),

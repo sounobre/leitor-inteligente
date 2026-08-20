@@ -54,10 +54,47 @@ export interface StudyItem {
   difficulty: string;
 }
 
+export interface VisualStudyCard {
+  term: string;
+  meaning: string;
+  example: string;
+  visualCue: string;
+  technique: string;
+  pronunciation: string;
+  difficulty: string;
+}
+
+export interface LinguisticDeck {
+  id: string;
+  title: string;
+  purpose: string;
+  items: StudyItem[];
+}
+
+export interface SemanticNode {
+  id: string;
+  label: string;
+  description: string;
+}
+
+export interface SemanticConnection {
+  fromId: string;
+  toId: string;
+  relationship: string;
+}
+
+export interface SemanticMap {
+  nodes: SemanticNode[];
+  connections: SemanticConnection[];
+}
+
 export interface StudyPlan {
   vocabulary: StudyItem[];
   idioms: StudyItem[];
   phrasalVerbs: StudyItem[];
+  visualCards?: VisualStudyCard[];
+  linguisticDecks?: LinguisticDeck[];
+  semanticMap?: SemanticMap;
 }
 
 export interface Chapter {

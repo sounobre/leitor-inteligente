@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { getBooks, getCards, initialiseStudyDb, PreparedBook, savePreparedBooks, StudyBook, StudyCard, toggleCard } from '@/lib/study-db';
+import { getBooks, getCards, getPreparedBooks, initialiseStudyDb, PreparedBook, savePreparedBooks, StudyBook, StudyCard, toggleCard } from '@/lib/study-db';
 
 type StudyContextValue = {
   cards: StudyCard[];
   books: StudyBook[];
+  preparedBooks: PreparedBook[];
   ready: boolean;
   syncing: boolean;
   syncError: boolean;
@@ -16,6 +17,7 @@ const StudyContext = createContext<StudyContextValue | null>(null);
 export function StudyProvider({ children }: { children: React.ReactNode }) {
   const [cards, setCards] = useState<StudyCard[]>([]);
   const [books, setBooks] = useState<StudyBook[]>([]);
+  const [preparedBooks, setPreparedBooks] = useState<PreparedBook[]>([]);
   const [ready, setReady] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState(false);
@@ -24,6 +26,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
     const items = await getCards();
     setCards(items);
     setBooks(await getBooks());
+    setPreparedBooks(await getPreparedBooks());
   };
 
   useEffect(() => {
@@ -54,12 +57,12 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(() => ({
-    cards, books, ready, syncing, syncError, refresh,
+    cards, books, preparedBooks, ready, syncing, syncError, refresh,
     setReviewed: async (id: number, reviewed: boolean) => {
       await toggleCard(id, reviewed);
       setCards((current) => current.map((card) => card.id === id ? { ...card, reviewed: reviewed ? 1 : 0 } : card));
     },
-  }), [cards, books, ready, syncing, syncError]);
+  }), [cards, books, preparedBooks, ready, syncing, syncError]);
 
   return <StudyContext.Provider value={value}>{children}</StudyContext.Provider>;
 }

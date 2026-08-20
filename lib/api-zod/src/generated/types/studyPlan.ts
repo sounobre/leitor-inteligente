@@ -5,10 +5,16 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { LinguisticDeck } from './linguisticDeck';
+import type { SemanticMap } from './semanticMap';
 import type { StudyItem } from './studyItem';
+import type { VisualStudyCard } from './visualStudyCard';
 
 export interface StudyPlan {
   vocabulary: StudyItem[];
   idioms: StudyItem[];
   phrasalVerbs: StudyItem[];
+  visualCards?: VisualStudyCard[];
+  linguisticDecks?: LinguisticDeck[];
+  semanticMap?: SemanticMap;
 }
