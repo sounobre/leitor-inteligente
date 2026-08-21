@@ -8,6 +8,7 @@
 
 export interface DictionaryStudyCard {
   id: string;
+  headword?: string;
   term: string;
   translation: string;
   /** @nullable */

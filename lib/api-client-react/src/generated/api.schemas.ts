@@ -176,6 +176,7 @@ export interface DictionaryImportResult {
 
 export interface DictionaryEntrySummary {
   id: string;
+  headword: string;
   term: string;
   translation: string;
   partOfSpeech: string;
@@ -199,6 +200,7 @@ export interface DictionaryExample {
 
 export interface DictionaryStudyCard {
   id: string;
+  headword?: string;
   term: string;
   translation: string;
   /** @nullable */

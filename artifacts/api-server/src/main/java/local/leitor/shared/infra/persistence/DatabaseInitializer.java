@@ -56,6 +56,7 @@ public class DatabaseInitializer {
         CREATE TABLE IF NOT EXISTS dictionary_entries (
           id TEXT PRIMARY KEY,
           source_id TEXT NOT NULL REFERENCES dictionary_sources(id) ON DELETE CASCADE,
+          headword TEXT NOT NULL DEFAULT '',
           term TEXT NOT NULL,
           normalized_term TEXT NOT NULL,
           translation TEXT NOT NULL,
@@ -64,6 +65,7 @@ public class DatabaseInitializer {
           UNIQUE(source_id, normalized_term)
         )
         """);
+    jdbc.execute("ALTER TABLE dictionary_entries ADD COLUMN IF NOT EXISTS headword TEXT NOT NULL DEFAULT ''");
     jdbc.execute("""
         CREATE TABLE IF NOT EXISTS dictionary_senses (
           id TEXT PRIMARY KEY,
@@ -107,8 +109,8 @@ public class DatabaseInitializer {
           WHERE e.term !~ '\\s'
             AND lower(s.definition) ~ '^(be|make|have|take|give|go|get|keep|let|put|come|fall|find|hold|lose|pay|play|run|see|set|show|stand|stick|throw|turn|break|bring|call|carry|catch|cut|do|draw|drive|drop|eat|face|feel|fill|follow|forget|hand|hit|join|leave|live|look|miss|move|pick|pull|reach|save|send|shake|sleep|speak|spend|start|stay|step|swim|talk|think|try|walk|watch|wear|win|wipe)\\s'
         )
-        UPDATE dictionary_entries e
-        SET term = repaired.expression, normalized_term = lower(repaired.expression)
+         UPDATE dictionary_entries e
+         SET headword = e.term, term = repaired.expression, normalized_term = lower(repaired.expression)
         FROM repaired
         WHERE e.id = repaired.id
         """);

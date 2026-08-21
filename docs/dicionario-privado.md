@@ -37,4 +37,6 @@ Example sentence in English. / Exemplo de tradução em português.
 
 No terceiro formato, o texto antes dos dois-pontos é apenas o marcador alfabético do dicionário. O termo salvo para estudo é a expressão em inglês depois dos dois-pontos — por exemplo, `make amends` — sem as notas opcionais entre parênteses. O sentido completo e a tradução são preservados, enquanto a frase bilíngue original não é copiada para os cartões.
 
+O marcador alfabético também é preservado separadamente como cabeçalho visual — por exemplo, `amends:` — sem ser confundido com o termo principal da entrada.
+
 EPUBs com uma estrutura muito visual, em colunas ou com cada definição fragmentada em diversos elementos podem exigir evolução do normalizador. As linhas que não forem reconhecidas são informadas no resultado da importação.

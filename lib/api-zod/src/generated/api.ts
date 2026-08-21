@@ -205,6 +205,7 @@ export const SearchDictionaryEntriesQueryParams = zod.object({
 
 export const SearchDictionaryEntriesResponseItem = zod.object({
   "id": zod.string(),
+  "headword": zod.string(),
   "term": zod.string(),
   "translation": zod.string(),
   "partOfSpeech": zod.string(),
@@ -271,6 +272,7 @@ export const GetDictionaryEntryResponse = zod.object({
 })),
   "cards": zod.array(zod.object({
   "id": zod.string(),
+  "headword": zod.string().optional(),
   "term": zod.string(),
   "translation": zod.string(),
   "exampleId": zod.string().nullish()
@@ -313,6 +315,7 @@ export const CreateDictionaryStudyCardBody = zod.object({
 
 export const CreateDictionaryStudyCardResponse = zod.object({
   "id": zod.string(),
+  "headword": zod.string().optional(),
   "term": zod.string(),
   "translation": zod.string(),
   "exampleId": zod.string().nullish()

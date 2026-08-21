@@ -92,11 +92,12 @@ public class PrivateDictionaryService {
         for (ParsedEntry parsedEntry : parsed.entries()) {
             String entryId = UUID.randomUUID().toString();
             jdbc.update("""
-                INSERT INTO dictionary_entries (id, source_id, term, normalized_term, translation, part_of_speech)
-                VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO dictionary_entries (id, source_id, headword, term, normalized_term, translation, part_of_speech)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 entryId,
                 sourceId,
+                parsedEntry.headword(),
                 parsedEntry.term(),
                 normalize(parsedEntry.term()),
                 parsedEntry.translation(),
@@ -129,7 +130,7 @@ public class PrivateDictionaryService {
         String query = safe(rawQuery).trim().toLowerCase(Locale.ROOT);
         String matcher = "%" + query + "%";
         return jdbc.query("""
-            SELECT e.id, e.term, e.translation, e.part_of_speech, s.title AS source_title,
+            SELECT e.id, e.headword, e.term, e.translation, e.part_of_speech, s.title AS source_title,
               (SELECT COUNT(*) FROM dictionary_examples example WHERE example.entry_id = e.id) AS example_count
             FROM dictionary_entries e
             JOIN dictionary_sources s ON s.id = e.source_id
@@ -139,6 +140,7 @@ public class PrivateDictionaryService {
             """,
             (rs, rowNum) -> new EntrySummary(
                 rs.getString("id"),
+                rs.getString("headword"),
                 rs.getString("term"),
                 rs.getString("translation"),
                 rs.getString("part_of_speech"),
@@ -152,13 +154,14 @@ public class PrivateDictionaryService {
     @Transactional(readOnly = true)
     public EntryDetail getEntry(String entryId) {
         EntryBase base = jdbc.query("""
-            SELECT e.id, e.term, e.translation, e.part_of_speech, s.title, s.publisher
+            SELECT e.id, e.headword, e.term, e.translation, e.part_of_speech, s.title, s.publisher
             FROM dictionary_entries e JOIN dictionary_sources s ON s.id = e.source_id
             WHERE e.id = ?
             """,
             resultSet -> resultSet.next()
                 ? new EntryBase(
                     resultSet.getString("id"),
+                    resultSet.getString("headword"),
                     resultSet.getString("term"),
                     resultSet.getString("translation"),
                     resultSet.getString("part_of_speech"),
@@ -202,7 +205,7 @@ public class PrivateDictionaryService {
             entryId
         );
         return new EntryDetail(
-            base.id(), base.term(), base.translation(), base.partOfSpeech(),
+            base.id(), base.headword(), base.term(), base.translation(), base.partOfSpeech(),
             new SourceInfo(base.sourceTitle(), base.publisher()), senses, examples, cards
         );
     }
@@ -310,12 +313,12 @@ public class PrivateDictionaryService {
                         && !COLON_ENTRY.matcher(candidateTranslation).matches()
                         && candidateTranslation.length() >= 3
                         && candidateTranslation.length() <= 420) {
-                        addParsed(parsed, term, definition, candidateTranslation);
+                     addParsed(parsed, term, definition, candidateTranslation, term);
                         index = translationIndex;
                         continue;
                     }
                 }
-                addParsed(parsed, term, definition);
+                addParsed(parsed, term, definition, shortenTranslation(definition), term);
                 continue;
             }
             Matcher inline = INLINE_ENTRY.matcher(line);
@@ -342,21 +345,22 @@ public class PrivateDictionaryService {
     }
 
     private static void addParsed(Map<String, ParsedEntry> entries, String rawTerm, String rawDefinition) {
-        addParsed(entries, rawTerm, rawDefinition, shortenTranslation(rawDefinition));
+        addParsed(entries, rawTerm, rawDefinition, shortenTranslation(rawDefinition), "");
     }
 
     private static void addParsed(
         Map<String, ParsedEntry> entries,
         String rawTerm,
         String rawDefinition,
-        String rawTranslation
+        String rawTranslation,
+        String rawHeadword
     ) {
         String term = promoteHeadwordToExpression(rawTerm, rawDefinition);
         String definition = rawDefinition.trim();
         String translation = rawTranslation.trim();
         if (term.length() < 2 || definition.isBlank() || translation.isBlank()) return;
         String key = normalize(term);
-        entries.putIfAbsent(key, new ParsedEntry(term, definition, shortenTranslation(translation), detectPartOfSpeech(definition)));
+        entries.putIfAbsent(key, new ParsedEntry(term, safe(rawHeadword).trim(), definition, shortenTranslation(translation), detectPartOfSpeech(definition)));
     }
 
     private static String promoteHeadwordToExpression(String rawTerm, String rawDefinition) {
@@ -444,19 +448,19 @@ public class PrivateDictionaryService {
     public record SourceSummary(String id, String title, String publisher, String isbn, int entryCount, String createdAt) {}
     public record ImportResult(SourceSummary source, int importedEntries, int skippedLines, List<String> warnings) {}
     public record EntrySummary(
-        String id, String term, String translation, String partOfSpeech, String sourceTitle, int exampleCount
+        String id, String headword, String term, String translation, String partOfSpeech, String sourceTitle, int exampleCount
     ) {}
     public record SourceInfo(String title, String publisher) {}
     public record Sense(String id, String definition, String translation) {}
     public record GeneratedExample(String id, String sentence, String translation, String explanation, String createdAt) {}
     public record StudyCard(String id, String term, String translation, String exampleId) {}
     public record EntryDetail(
-        String id, String term, String translation, String partOfSpeech, SourceInfo source,
+        String id, String headword, String term, String translation, String partOfSpeech, SourceInfo source,
         List<Sense> senses, List<GeneratedExample> examples, List<StudyCard> cards
     ) {}
-    record ParsedEntry(String term, String definition, String translation, String partOfSpeech) {}
+    record ParsedEntry(String term, String headword, String definition, String translation, String partOfSpeech) {}
     record ParseResult(List<ParsedEntry> entries, int skippedLines, List<String> warnings) {}
     private record EntryBase(
-        String id, String term, String translation, String partOfSpeech, String sourceTitle, String publisher
+        String id, String headword, String term, String translation, String partOfSpeech, String sourceTitle, String publisher
     ) {}
 }

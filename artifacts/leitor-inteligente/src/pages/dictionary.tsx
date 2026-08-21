@@ -22,6 +22,7 @@ const getSettings = (): Preferences => {
 
 type SearchResult = {
   id: string;
+  headword?: string;
   term: string;
   translation?: string;
   partOfSpeech?: string;
@@ -31,6 +32,7 @@ type SearchResult = {
 
 type DictionaryEntry = {
   id: string;
+  headword?: string;
   term: string;
   translation?: string;
   partOfSpeech?: string;
@@ -178,7 +180,8 @@ export function DictionaryPage() {
                       : 'bg-transparent border-transparent hover:bg-[hsl(var(--card)/0.6)] hover:border-[hsl(var(--border))]'
                   }`}
                 >
-                  <span className={`text-[15px] font-semibold ${selectedId === res.id ? 'text-[hsl(var(--primary))]' : 'text-[hsl(var(--foreground))]'}`}>
+                   {res.headword && <span className="text-[11px] font-mono text-[hsl(var(--muted-foreground))]">{res.headword}:</span>}
+                   <span className={`text-[15px] font-semibold ${selectedId === res.id ? 'text-[hsl(var(--primary))]' : 'text-[hsl(var(--foreground))]'}`}>
                     {res.term}
                   </span>
                   <span className="text-[12px] text-[hsl(var(--muted-foreground))] mt-1 flex items-center gap-2 w-full">
@@ -219,6 +222,11 @@ export function DictionaryPage() {
             <div className="flex flex-col h-full fade-up">
               <div className="flex items-end justify-between border-b border-[hsl(var(--border))] pb-5 mb-6">
                 <div>
+                  {entry.headword && (
+                    <div className="text-[12px] font-mono uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-2">
+                      {entry.headword}:
+                    </div>
+                  )}
                   <h1 className="text-4xl font-serif tracking-tight m-0 mb-3 text-[hsl(var(--primary))]">{entry.term}</h1>
                   <div className="flex items-center gap-3">
                     {entry.partOfSpeech && (

@@ -60,6 +60,7 @@ class PrivateDictionaryServiceTest {
 
         assertEquals(1, result.entries().size());
         assertEquals("make amends", result.entries().getFirst().term());
+        assertEquals("amends", result.entries().getFirst().headword());
         assertEquals("make amends (to some­one) (for something / for doing something)", result.entries().getFirst().definition());
         assertEquals("fazer algo para compensar, reparar um erro.", result.entries().getFirst().translation());
     }

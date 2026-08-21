@@ -8,6 +8,7 @@
 
 export interface DictionaryEntrySummary {
   id: string;
+  headword: string;
   term: string;
   translation: string;
   partOfSpeech: string;
