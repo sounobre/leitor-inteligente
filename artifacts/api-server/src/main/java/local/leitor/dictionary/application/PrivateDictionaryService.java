@@ -19,6 +19,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,13 +35,14 @@ import local.leitor.engine.domain.exception.StudyPlanGenerationException;
  */
 @Service
 public class PrivateDictionaryService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PrivateDictionaryService.class);
     private static final Pattern INLINE_ENTRY = Pattern.compile(
         "^\\s*([A-Za-z][A-Za-zÀ-ÿ'’ -]{1,90}?)\\s*(?:—|–|:|\\t)\\s*(.{3,420})\\s*$"
     );
     private static final Pattern COLON_ENTRY = Pattern.compile(
         "^\\s*([A-Za-z][A-Za-zÀ-ÿ'’ -]{1,90}?)\\s*:\\s*(.{3,420})\\s*$"
     );
-    private static final Pattern SENSE_NUMBER = Pattern.compile("^\\s*(\\d+)[.)]?\\s*$");
+    private static final Pattern SENSE_NUMBER = Pattern.compile("^\\s*(\\d{1,2})[.)]?\\s*$");
     private static final Pattern EXPRESSION_START = Pattern.compile(
         "^(?:be|make|have|take|give|go|get|keep|let|put|come|fall|find|hold|lose|pay|play|run|see|set|show|stand|stick|throw|turn|break|bring|call|carry|catch|cut|do|draw|drive|drop|eat|face|feel|fill|follow|forget|hand|hit|join|leave|live|look|miss|move|pick|pull|reach|save|send|shake|sleep|speak|spend|start|stay|step|swim|talk|think|try|walk|watch|wear|win|wipe)\\b.*",
         Pattern.CASE_INSENSITIVE
@@ -64,6 +67,7 @@ public class PrivateDictionaryService {
 
     @Transactional
     public ImportResult importEpub(ImportRequest request) {
+        long startedAt = System.nanoTime();
         requirePrivateAcknowledgement(request.privateAcknowledged());
         if (request.fileName() == null || !request.fileName().toLowerCase(Locale.ROOT).endsWith(".epub")) {
             throw new BusinessValidationException("Escolha um arquivo EPUB para importar o dicionário.");
@@ -71,14 +75,37 @@ public class PrivateDictionaryService {
         if (request.title() == null || request.title().isBlank()) {
             throw new BusinessValidationException("Dê um título para identificar esta fonte particular.");
         }
+        LOGGER.info(
+            "dictionary import started file={} title={} publisherPresent={} isbnPresent={}",
+            request.fileName(),
+            request.title().trim(),
+            !safe(request.publisher()).isBlank(),
+            !safe(request.isbn()).isBlank()
+        );
 
         List<Chapter> chapters = epubExtractor.extract(request.content(), request.fileName());
         String text = chapters.stream().map(Chapter::content).reduce("", (left, right) -> left + "\n" + right);
+        LOGGER.info("dictionary import extracted chapters={} textChars={}", chapters.size(), text.length());
         ParseResult parsed = parseEntries(text);
         if (parsed.entries().isEmpty()) {
+            LOGGER.warn("dictionary import parsed no entries file={} skippedLines={}", request.fileName(), parsed.skippedLines());
             throw new BusinessValidationException(
                 "Não reconheci entradas suficientes neste EPUB. Este formato pode exigir ajustes no importador."
             );
+        }
+        int senseCount = parsed.entries().stream().mapToInt(entry -> entry.senses().size()).sum();
+        int labeledEntryCount = (int) parsed.entries().stream().filter(entry -> !entry.usageLabels().isEmpty()).count();
+        LOGGER.info(
+            "dictionary import parsed entries={} senses={} labeledEntries={} skippedLines={} warnings={} elapsedMs={}",
+            parsed.entries().size(),
+            senseCount,
+            labeledEntryCount,
+            parsed.skippedLines(),
+            parsed.warnings().size(),
+            (System.nanoTime() - startedAt) / 1_000_000
+        );
+        if (!parsed.warnings().isEmpty()) {
+            LOGGER.warn("dictionary import completed with warnings count={} skippedLines={}", parsed.warnings().size(), parsed.skippedLines());
         }
 
         String sourceId = UUID.randomUUID().toString();
@@ -129,6 +156,13 @@ public class PrivateDictionaryService {
             safe(request.isbn()),
             parsed.entries().size(),
             Instant.now().toString()
+        );
+        LOGGER.info(
+            "dictionary import persisted source={} entries={} senses={} elapsedMs={}",
+            sourceId,
+            parsed.entries().size(),
+            senseCount,
+            (System.nanoTime() - startedAt) / 1_000_000
         );
         return new ImportResult(source, parsed.entries().size(), parsed.skippedLines(), parsed.warnings());
     }
@@ -386,6 +420,10 @@ public class PrivateDictionaryService {
             }
             if (SENSE_NUMBER.matcher(line).matches()) {
                 position = Integer.parseInt(SENSE_NUMBER.matcher(line).replaceFirst("$1"));
+                index++;
+                continue;
+            }
+            if (line.matches("\\d{3,}")) {
                 index++;
                 continue;
             }
