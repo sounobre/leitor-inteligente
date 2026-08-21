@@ -2,3 +2,7 @@
 - [OpenAPI numeric schema generation](openapi-number-codegen.md) — use number plus integer semantics because the current Zod generator cannot emit z.int().
 - [Active API runtime](active-api-runtime.md) — the API workflow serves Spring Boot; keep runtime behavior aligned with its Java controller, not only the parallel Express scaffold.
 - [GitHub initial import](github-initial-import.md) — initialize an empty repo, then create its tree with inline text content to avoid connector blob throttling.
+- [Spoiler-free preparation](spoiler-free-preparation.md) — examples and visual vocabulary must teach the book's language without exposing excerpts, plot facts, or distinctive details.
+- [Fantasy trail translations](fantasy-trail-translations.md) — generated card variants need contextual Portuguese glosses, never a generic “expressão com…” label.
+- [Mobile offline boundary](mobile-offline-boundary.md) — Ollama stays on the computer; mobile studies from locally synchronized books and plans while offline.
+- [Specialist study progress](specialist-study-progress.md) — specialist catalog is static and review states stay local to each browser by design.

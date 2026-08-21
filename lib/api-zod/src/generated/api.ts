@@ -32,6 +32,22 @@ export const ListOllamaModelsResponse = zod.object({
 
 
 /**
+ * @summary List models available through OpenRouter
+ */
+export const listOpenRouterModelsQueryEndpointDefault = `https://openrouter.ai/api/v1`;
+
+export const ListOpenRouterModelsQueryParams = zod.object({
+  "endpoint": zod.coerce.string().default(listOpenRouterModelsQueryEndpointDefault).describe('OpenRouter API base URL.')
+})
+
+export const ListOpenRouterModelsResponse = zod.object({
+  "models": zod.array(zod.object({
+  "name": zod.string()
+}))
+})
+
+
+/**
  * @summary List books in the library
  */
 export const ListBooksResponseItem = zod.object({
@@ -58,7 +74,8 @@ export const ImportBookBody = zod.object({
   "content": zod.string().describe('For EPUB, a base64 data URL containing the complete file. For ARTICLE, the article URL.'),
   "fileName": zod.string().optional().describe('Original EPUB file name, used to validate the upload.'),
   "ollamaEndpoint": zod.string().describe('Local Ollama base URL.'),
-  "ollamaModel": zod.string().describe('Ollama model used to prepare the plan.')
+  "ollamaModel": zod.string().describe('Model used to prepare the plan.'),
+  "provider": zod.enum(['ollama', 'openrouter']).describe('Provider used to prepare the plan.')
 })
 
 export const ImportBookResponse = zod.object({

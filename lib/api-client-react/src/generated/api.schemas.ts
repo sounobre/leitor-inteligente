@@ -120,6 +120,17 @@ export const ImportBookRequestSourceType = {
   ARTICLE: 'ARTICLE',
 } as const;
 
+/**
+ * Provider used to prepare the plan.
+ */
+export type ImportBookRequestProvider = typeof ImportBookRequestProvider[keyof typeof ImportBookRequestProvider];
+
+
+export const ImportBookRequestProvider = {
+  ollama: 'ollama',
+  openrouter: 'openrouter',
+} as const;
+
 export interface ImportBookRequest {
   title: string;
   author: string;
@@ -130,8 +141,10 @@ export interface ImportBookRequest {
   fileName?: string;
   /** Local Ollama base URL. */
   ollamaEndpoint: string;
-  /** Ollama model used to prepare the plan. */
+  /** Model used to prepare the plan. */
   ollamaModel: string;
+  /** Provider used to prepare the plan. */
+  provider: ImportBookRequestProvider;
 }
 
 export interface Dashboard {
@@ -146,5 +159,12 @@ export type ListOllamaModelsParams = {
  * Base URL of the local Ollama instance.
  */
 endpoint: string;
+};
+
+export type ListOpenRouterModelsParams = {
+/**
+ * OpenRouter API base URL.
+ */
+endpoint?: string;
 };
 

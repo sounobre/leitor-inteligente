@@ -1,4 +1,4 @@
-import { BookOpen, Compass, Library, Settings2 } from 'lucide-react';
+import { BookMarked, BookOpen, Compass, Library, Settings2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useHealthCheck, getHealthCheckQueryKey } from '@workspace/api-client-react';
@@ -6,6 +6,7 @@ import { useHealthCheck, getHealthCheckQueryKey } from '@workspace/api-client-re
 const navItems = [
   { href: '/', label: 'Visão geral', icon: Compass },
   { href: '/library', label: 'Biblioteca', icon: Library },
+  { href: '/specialists', label: 'Especialistas', icon: BookMarked },
   { href: '/settings', label: 'Preferências', icon: Settings2 },
 ];
 
@@ -27,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <aside className="sidebar">
         <Brand />
-        <div className="nav-label">O teu espaço</div>
+        <div className="nav-label">Seu espaço</div>
         <nav aria-label="Navegação principal">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link key={href} href={href} className={`nav-link ${isActive(href) ? 'active' : ''}`} data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`}>
@@ -38,10 +39,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="sidebar-foot">
           <strong>Um livro de cada vez.</strong>
-          <span>Prepara a leitura. Repara no que antes passava despercebido.</span>
+          <span>Prepare a leitura. Repare no que antes passava despercebido.</span>
           <div className="connection">
             <span className={`connection-dot ${health.data?.status === 'ok' ? 'ok' : ''}`} />
-            {health.data?.status === 'ok' ? 'motor de estudo ligado' : 'a verificar o motor'}
+            {health.data?.status === 'ok' ? 'motor de estudo ligado' : 'verificando o motor'}
           </div>
         </div>
       </aside>

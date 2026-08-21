@@ -12,6 +12,8 @@ import local.leitor.shared.domain.BusinessValidationException;
 import local.leitor.shared.domain.DomainException;
 import local.leitor.shared.domain.EntityNotFoundException;
 import local.leitor.engine.domain.exception.StudyPlanGenerationException;
+import local.leitor.engine.domain.exception.OpenRouterPaymentRequiredException;
+import local.leitor.engine.domain.exception.OpenRouterRateLimitException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -55,8 +57,26 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(StudyPlanGenerationException.class)
     public ProblemDetail handleStudyPlanGeneration(StudyPlanGenerationException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, ex.getMessage());
-        problem.setTitle("Ollama Unavailable");
-        problem.setType(URI.create("https://errors.leitor.local/ollama-unavailable"));
+        problem.setTitle("AI preparation failed");
+        problem.setType(URI.create("https://errors.leitor.local/ai-preparation-failed"));
+        problem.setProperty("timestamp", Instant.now());
+        return problem;
+    }
+
+    @ExceptionHandler(OpenRouterPaymentRequiredException.class)
+    public ProblemDetail handleOpenRouterPaymentRequired(OpenRouterPaymentRequiredException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.valueOf(402), ex.getMessage());
+        problem.setTitle("OpenRouter credits required");
+        problem.setType(URI.create("https://errors.leitor.local/openrouter-payment-required"));
+        problem.setProperty("timestamp", Instant.now());
+        return problem;
+    }
+
+    @ExceptionHandler(OpenRouterRateLimitException.class)
+    public ProblemDetail handleOpenRouterRateLimit(OpenRouterRateLimitException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        problem.setTitle("OpenRouter rate limit reached");
+        problem.setType(URI.create("https://errors.leitor.local/openrouter-rate-limit"));
         problem.setProperty("timestamp", Instant.now());
         return problem;
     }

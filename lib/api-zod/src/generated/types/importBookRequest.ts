@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ImportBookRequestProvider } from './importBookRequestProvider';
 import type { ImportBookRequestSourceType } from './importBookRequestSourceType';
 
 export interface ImportBookRequest {
@@ -17,6 +18,8 @@ export interface ImportBookRequest {
   fileName?: string;
   /** Local Ollama base URL. */
   ollamaEndpoint: string;
-  /** Ollama model used to prepare the plan. */
+  /** Model used to prepare the plan. */
   ollamaModel: string;
+  /** Provider used to prepare the plan. */
+  provider: ImportBookRequestProvider;
 }

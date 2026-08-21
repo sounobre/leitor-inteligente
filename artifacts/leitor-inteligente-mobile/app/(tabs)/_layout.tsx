@@ -23,6 +23,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: 'rectangle.stack', selected: 'rectangle.stack.fill' }} />
         <Label>Preparar</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="specialists">
+        <Icon sf={{ default: 'graduationcap', selected: 'graduationcap.fill' }} />
+        <Label>Especialistas</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="library">
         <Icon sf={{ default: 'books.vertical', selected: 'books.vertical.fill' }} />
         <Label>Livros</Label>
@@ -98,6 +102,14 @@ function ClassicTabLayout() {
           title: 'Livros',
           tabBarIcon: ({ color }) =>
             isIOS ? <SymbolView name="books.vertical" tintColor={color} size={24} /> : <Feather name="book-open" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="specialists"
+        options={{
+          title: 'Especialistas',
+          tabBarIcon: ({ color }) =>
+            isIOS ? <SymbolView name="graduationcap" tintColor={color} size={24} /> : <Feather name="award" size={22} color={color} />,
         }}
       />
     </Tabs>

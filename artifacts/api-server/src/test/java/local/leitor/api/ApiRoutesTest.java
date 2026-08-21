@@ -1,6 +1,8 @@
 package local.leitor.api;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -18,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import local.leitor.book.application.port.in.GetBookDetailUseCase;
 import local.leitor.book.application.port.in.ImportBookUseCase;
 import local.leitor.book.application.port.in.ListBooksUseCase;
+import local.leitor.book.application.port.in.DeleteBookUseCase;
 import local.leitor.book.domain.model.Book;
 import local.leitor.book.domain.model.BookId;
 import local.leitor.book.domain.model.BookStatus;
@@ -47,6 +50,9 @@ class ApiRoutesTest {
 
     @MockBean
     private GetBookDetailUseCase getBookDetailUseCase;
+
+    @MockBean
+    private DeleteBookUseCase deleteBookUseCase;
 
     @MockBean
     private GetDashboardUseCase getDashboardUseCase;
@@ -93,6 +99,15 @@ class ApiRoutesTest {
             .andExpect(jsonPath("$[0].progress").value(0))
             .andExpect(jsonPath("$[0].coverColor").value("#D7F0E5"))
             .andExpect(jsonPath("$[0].updatedAt").value("2026-08-20T18:00:00Z"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/books/{bookId} removes a book and returns 204")
+    void deleteBookRouteReturnsNoContent() throws Exception {
+        mvc.perform(delete("/api/books/book-1"))
+            .andExpect(status().isNoContent());
+
+        verify(deleteBookUseCase).deleteBook(BookId.of("book-1"));
     }
 
     @Test

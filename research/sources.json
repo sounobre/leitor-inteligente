@@ -1,0 +1,58 @@
+[
+  {
+    "key": "fantasy-genre-britannica",
+    "title": "Britannica — Fantasy",
+    "url": "https://www.britannica.com/art/fantasy-narrative-genre",
+    "tier": 1,
+    "savedEvidence": "research/sources/fantasy-genre-britannica.md"
+  },
+  {
+    "key": "fantasy-linguistic-features-academic",
+    "title": "Genre Originality and Linguistic Features of Fantasy",
+    "url": "https://www.scitepress.org/Papers/2023/129315/129315.pdf",
+    "tier": 1,
+    "savedEvidence": "research/sources/fantasy-linguistic-features-academic.md"
+  },
+  {
+    "key": "fantasy-language-novelry",
+    "title": "Samantha Shannon on Language in Fantasy Fiction",
+    "url": "https://www.thenovelry.com/blog/language-in-fantasy-fiction",
+    "tier": 3,
+    "savedEvidence": "research/sources/fantasy-language-novelry.md"
+  },
+  {
+    "key": "fantasy-jargon-sfwa",
+    "title": "The Jargon and Slang of the Fantastic",
+    "url": "https://sfwa.org/2019/08/27/the-jargon-and-slang-of-the-fantastic/",
+    "tier": 2,
+    "savedEvidence": "research/sources/fantasy-jargon-sfwa.md"
+  },
+  {
+    "key": "vocabulary-learning-context-eric",
+    "title": "The effects of context on incidental vocabulary learning",
+    "url": "https://files.eric.ed.gov/fulltext/EJ815123.pdf",
+    "tier": 1,
+    "savedEvidence": "research/sources/vocabulary-learning-context-eric.md"
+  },
+  {
+    "key": "extensive-reading-wiley",
+    "title": "The Effects of Extensive Reading on Reading Comprehension, Reading Rate, and Vocabulary Acquisition",
+    "url": "https://ila.onlinelibrary.wiley.com/doi/abs/10.1002/rrq.152",
+    "tier": 1,
+    "savedEvidence": "research/sources/extensive-reading-wiley.md"
+  },
+  {
+    "key": "reading-support-open-text",
+    "title": "Reading Support for the Principles",
+    "url": "https://opentext.uoregon.edu/languagelearningedition1/chapter/reading-support-for-the-principles/",
+    "tier": 1,
+    "savedEvidence": "research/sources/reading-support-open-text.md"
+  },
+  {
+    "key": "lexical-coverage-eric",
+    "title": "Lexical threshold revisited",
+    "url": "https://files.eric.ed.gov/fulltext/EJ887873.pdf",
+    "tier": 1,
+    "savedEvidence": "research/sources/lexical-coverage-eric.md"
+  }
+]

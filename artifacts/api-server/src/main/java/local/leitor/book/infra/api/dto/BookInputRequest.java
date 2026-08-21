@@ -10,7 +10,8 @@ public record BookInputRequest(
     String content,
     String fileName,
     String ollamaEndpoint,
-    String ollamaModel
+    String ollamaModel,
+    String provider
 ) {
     public ImportBookCommand toCommand() {
         return new ImportBookCommand(
@@ -20,7 +21,8 @@ public record BookInputRequest(
             content,
             fileName,
             ollamaEndpoint,
-            ollamaModel
+            ollamaModel,
+            provider
         );
     }
 }

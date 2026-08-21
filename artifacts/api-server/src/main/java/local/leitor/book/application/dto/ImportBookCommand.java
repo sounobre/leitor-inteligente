@@ -13,8 +13,21 @@ public record ImportBookCommand(
     String content,
     String fileName,
     String ollamaEndpoint,
-    String ollamaModel
+    String ollamaModel,
+    String provider
 ) {
+    public ImportBookCommand(
+        String title,
+        String author,
+        SourceType sourceType,
+        String content,
+        String fileName,
+        String ollamaEndpoint,
+        String ollamaModel
+    ) {
+        this(title, author, sourceType, content, fileName, ollamaEndpoint, ollamaModel, "ollama");
+    }
+
     public ImportBookCommand {
         if (title == null || title.isBlank()) {
             throw new BusinessValidationException("Title is required");
@@ -26,10 +39,13 @@ public record ImportBookCommand(
             throw new BusinessValidationException("Source type is required");
         }
         if (ollamaEndpoint == null || ollamaEndpoint.isBlank()) {
-            throw new BusinessValidationException("Ollama endpoint is required");
+            throw new BusinessValidationException("AI provider endpoint is required");
         }
         if (ollamaModel == null || ollamaModel.isBlank()) {
-            throw new BusinessValidationException("Ollama model is required");
+            throw new BusinessValidationException("AI provider model is required");
+        }
+        if (provider == null || provider.isBlank()) {
+            throw new BusinessValidationException("AI provider is required");
         }
     }
 }

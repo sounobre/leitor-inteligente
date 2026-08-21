@@ -16,4 +16,6 @@ public interface BookRepositoryPort {
     List<Book> findReady();
 
     Optional<Book> findById(BookId id);
+
+    boolean deleteById(BookId id);
 }

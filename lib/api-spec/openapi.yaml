@@ -47,6 +47,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OllamaModelCatalog"
+  /openrouter/models:
+    get:
+      operationId: listOpenRouterModels
+      tags: [study]
+      summary: List models available through OpenRouter
+      parameters:
+        - name: endpoint
+          in: query
+          required: false
+          schema:
+            type: string
+            default: https://openrouter.ai/api/v1
+          description: OpenRouter API base URL.
+      responses:
+        "200":
+          description: Models available to the configured OpenRouter key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OllamaModelCatalog"
   /books:
     get:
       operationId: listBooks
@@ -262,8 +282,12 @@ components:
           description: Local Ollama base URL.
         ollamaModel:
           type: string
-          description: Ollama model used to prepare the plan.
-      required: [title, author, sourceType, content, ollamaEndpoint, ollamaModel]
+          description: Model used to prepare the plan.
+        provider:
+          type: string
+          enum: [ollama, openrouter]
+          description: Provider used to prepare the plan.
+      required: [title, author, sourceType, content, ollamaEndpoint, ollamaModel, provider]
     Dashboard:
       type: object
       properties:

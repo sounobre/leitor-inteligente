@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { FileText, Globe2, LoaderCircle, Upload, X } from 'lucide-react';
-import { useImportBook, getListBooksQueryKey, getGetDashboardQueryKey } from '@workspace/api-client-react';
+import { getListBooksQueryKey, getGetDashboardQueryKey } from '@workspace/api-client-react';
+import type { ImportBookRequest, Book } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { defaults } from '@/pages/settings';
 
@@ -17,14 +18,14 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
   const [fileName, setFileName] = useState('');
   const [error, setError] = useState('');
   const [stage, setStage] = useState('');
-  const importer = useImportBook();
+  const [isPending, setIsPending] = useState(false);
 
   if (!open) return null;
 
   const reset = () => {
     setTitle(''); setAuthor(''); setContent(''); setFileName(''); setError(''); setStage(''); setSourceType('EPUB');
   };
-  const close = () => { if (!importer.isPending) { reset(); onClose(); } };
+  const close = () => { if (!isPending) { reset(); onClose(); } };
   const chooseFile = (file?: File) => {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.epub')) { setError('Escolhe um ficheiro .epub válido.'); return; }
@@ -46,17 +47,57 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
     setError('');
     const stored = window.localStorage.getItem('leitor-inteligente-settings');
     const settings = stored ? { ...defaults, ...JSON.parse(stored) } : defaults;
-    if (!settings.endpoint.trim() || !settings.model.trim()) { setError('Define o endereço e o modelo do Ollama em Preferências.'); return; }
-    setStage(sourceType === 'EPUB' ? 'A enviar para o Ollama e preparar…' : 'A preparar com o Ollama…');
-    importer.mutate({ data: { title: title.trim(), author: author.trim() || 'Autor desconhecido', sourceType, content: content.trim(), ollamaEndpoint: settings.endpoint.trim(), ollamaModel: settings.model.trim(), ...(sourceType === 'EPUB' ? { fileName } : {}) } }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListBooksQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
-         setStage('Preparação concluída.');
-         close();
-      },
-      onError: (caughtError) => { setStage(''); setError(caughtError instanceof Error ? caughtError.message : 'A importação não correu como esperado. Tenta novamente.'); },
-    });
+    if (!settings.endpoint.trim() || !settings.model.trim()) { setError('Define o provedor e o modelo em Preferências.'); return; }
+    const providerName = settings.provider === 'openrouter' ? 'OpenRouter' : 'Ollama';
+    setStage(sourceType === 'EPUB' ? `A enviar para ${providerName} e preparar…` : `A preparar com ${providerName}…`);
+    setIsPending(true);
+    const request: ImportBookRequest = { title: title.trim(), author: author.trim() || 'Autor desconhecido', sourceType, content: content.trim(), ollamaEndpoint: settings.endpoint.trim(), ollamaModel: settings.model.trim(), provider: settings.provider, ...(sourceType === 'EPUB' ? { fileName } : {}) };
+    void streamPreparation(request);
+  };
+
+  const streamPreparation = async (request: ImportBookRequest) => {
+    try {
+      const response = await fetch('/api/books/prepare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+        body: JSON.stringify(request),
+      });
+      if (!response.ok || !response.body) throw new Error('Não foi possível iniciar a preparação.');
+      const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+      let buffer = '';
+      while (true) {
+        const result = await reader.read();
+        if (result.done) break;
+        buffer += result.value;
+        const events = buffer.split('\n\n');
+        buffer = events.pop() ?? '';
+        for (const event of events) {
+          const dataLine = event.split('\n').find((line) => line.startsWith('data: '));
+          if (!dataLine) continue;
+          const payload = JSON.parse(dataLine.slice(6)) as { stage?: string; completedChunks?: number; totalChunks?: number; activity?: string; message?: string; title?: string };
+          if (event.includes('event: progress')) {
+            if (payload.totalChunks) {
+              const remaining = payload.totalChunks - (payload.completedChunks ?? 0);
+              const activity = payload.activity ? `${payload.activity}. ` : '';
+              setStage(`${activity}A preparar: ${payload.completedChunks ?? 0} de ${payload.totalChunks} etapas concluídas (${remaining} restantes). O modelo ainda está a trabalhar…`);
+            } else setStage('A extrair capítulos antes de preparar os blocos… O processo está em andamento.');
+          } else if (event.includes('event: error')) {
+            throw new Error(payload.message || 'A preparação falhou durante um dos blocos.');
+          } else if (event.includes('event: complete')) {
+            setStage('Preparação concluída.');
+            await queryClient.invalidateQueries({ queryKey: getListBooksQueryKey() });
+            await queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+            setIsPending(false);
+            reset();
+            onClose();
+          }
+        }
+      }
+    } catch (caughtError) {
+      setStage('');
+      setError(caughtError instanceof Error ? caughtError.message : 'A importação não correu como esperado. Tenta novamente.');
+      setIsPending(false);
+    }
   };
 
   return (
@@ -88,12 +129,12 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
           )}
           <div className="field"><label htmlFor="book-title">Título</label><input id="book-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="O nome do livro ou artigo" data-testid="input-book-title" /></div>
           <div className="field"><label htmlFor="book-author">Autor <span>(opcional)</span></label><input id="book-author" value={author} onChange={(event) => setAuthor(event.target.value)} placeholder="Quem escreveu?" data-testid="input-book-author" /></div>
-           {stage && <div className="import-progress" role="status" data-testid="status-import-progress"><LoaderCircle size={15} className={importer.isPending ? 'spin' : ''} /> {stage}</div>}
+            {stage && <div className="import-progress" role="status" data-testid="status-import-progress"><LoaderCircle size={15} className={isPending ? 'spin' : ''} /> {stage}</div>}
            {error && <div className="notice" role="alert" data-testid="status-import-error">{error}</div>}
           <div className="modal-actions">
             <button type="button" className="button button-quiet" onClick={close} data-testid="button-cancel-import">Cancelar</button>
-            <button type="submit" className="button button-primary" disabled={importer.isPending} data-testid="button-submit-import">
-              {importer.isPending ? <><LoaderCircle size={15} className="spin" /> A preparar…</> : 'Importar e preparar'}
+             <button type="submit" className="button button-primary" disabled={isPending} data-testid="button-submit-import">
+               {isPending ? <><LoaderCircle size={15} className="spin" /> A preparar…</> : 'Importar e preparar'}
             </button>
           </div>
         </form>

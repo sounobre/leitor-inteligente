@@ -9,6 +9,9 @@ import { DashboardPage } from '@/pages/dashboard';
 import { LibraryPage } from '@/pages/library';
 import { SettingsPage } from '@/pages/settings';
 import { StudyPage } from '@/pages/study';
+import { FantasyTrailPage } from '@/pages/trails/fantasy';
+import { SpecialistsPage } from '@/pages/specialists';
+import { FANTASY_TRAIL_ROUTE, SPECIALISTS_ROUTE } from '@/routes';
 import {
   Route,
   Switch,
@@ -29,6 +32,8 @@ function Router() {
         <Switch>
           <Route path="/" component={DashboardPage} />
           <Route path="/library" component={LibraryPage} />
+          <Route path={FANTASY_TRAIL_ROUTE} component={FantasyTrailPage} />
+          <Route path={SPECIALISTS_ROUTE} component={SpecialistsPage} />
           <Route path="/study/:bookId" component={StudyPage} />
           <Route path="/settings" component={SettingsPage} />
           <Route component={NotFound} />

@@ -76,6 +76,11 @@ public class JdbcBookRepositoryAdapter implements BookRepositoryPort {
     }
 
     @Override
+    public boolean deleteById(BookId id) {
+        return jdbc.update("DELETE FROM books WHERE id = ?", id.value()) > 0;
+    }
+
+    @Override
     public Book save(Book book) {
         String planJson;
         try {

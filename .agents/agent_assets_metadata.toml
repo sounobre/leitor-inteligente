@@ -1,0 +1,30 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "tx5rASMV5Ma6bGN1lANEh"
+uri = "file://research/notes.md"
+type = "text"
+title = "Notas de pesquisa: seções de fantasia"
+description = "Plano e registro vivo da pesquisa para transformar padrões de fantasia em seções reutilizáveis."
+logical_id = "6158a296-fe16-4ccf-b498-7e70ab774539"
+content_hash = "sha256:f01abb010ad5a3dfe0ec8e53cdd078509601aacf3db382adccd118984e8339c4"
+size = 1459
+mtime_ms = 1787267799092
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:9b56360b-068f-4894-9344-ecf04cad10e6/6158a296-fe16-4ccf-b498-7e70ab774539/fb17f459-c0b0-42da-9268-b308f8e9361f"
+storage_version_token = "1787267799631745"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "Rz2qvfh_wbiPUfj5Bujuo"
+uri = "file://research/fantasy-sections.md"
+type = "text"
+title = "Pesquisa: seções de estudo para fantasia"
+description = "Relatório com evidências, propostas de seções reutilizáveis, ideias de produto e um MVP recomendado."
+logical_id = "dff6c8e6-dfe6-4e76-a260-5465816a2ec0"
+content_hash = "sha256:115325f3e953d47477c139299a27453032420f443c357b1a16ab54b53fffac6b"
+size = 10938
+mtime_ms = 1787267964824
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:9b56360b-068f-4894-9344-ecf04cad10e6/dff6c8e6-dfe6-4e76-a260-5465816a2ec0/3d3034db-5767-445b-91e0-d78537d442b7"
+storage_version_token = "1787267965497248"
+content_type = "text/markdown"
