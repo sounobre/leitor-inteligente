@@ -61,11 +61,13 @@ public class DatabaseInitializer {
           normalized_term TEXT NOT NULL,
           translation TEXT NOT NULL,
           part_of_speech TEXT NOT NULL DEFAULT 'expressão',
+          usage_labels TEXT NOT NULL DEFAULT '',
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           UNIQUE(source_id, normalized_term)
         )
         """);
     jdbc.execute("ALTER TABLE dictionary_entries ADD COLUMN IF NOT EXISTS headword TEXT NOT NULL DEFAULT ''");
+    jdbc.execute("ALTER TABLE dictionary_entries ADD COLUMN IF NOT EXISTS usage_labels TEXT NOT NULL DEFAULT ''");
     jdbc.execute("""
         CREATE TABLE IF NOT EXISTS dictionary_senses (
           id TEXT PRIMARY KEY,

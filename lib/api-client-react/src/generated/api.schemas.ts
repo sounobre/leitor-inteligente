@@ -180,6 +180,7 @@ export interface DictionaryEntrySummary {
   term: string;
   translation: string;
   partOfSpeech: string;
+  usageLabels: string[];
   sourceTitle: string;
   exampleCount: number;
 }
@@ -217,6 +218,7 @@ export interface DictionaryEntryDetail {
   term: string;
   translation: string;
   partOfSpeech: string;
+  usageLabels: string[];
   source: DictionaryEntryDetailSource;
   senses: DictionarySense[];
   examples: DictionaryExample[];

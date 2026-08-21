@@ -26,6 +26,7 @@ type SearchResult = {
   term: string;
   translation?: string;
   partOfSpeech?: string;
+  usageLabels?: string[];
   sourceTitle: string;
   exampleCount: number;
 };
@@ -36,6 +37,7 @@ type DictionaryEntry = {
   term: string;
   translation?: string;
   partOfSpeech?: string;
+  usageLabels?: string[];
   source?: { title: string; publisher?: string };
   senses?: { id: string; definition: string; translation?: string }[];
   examples?: { id: string; sentence: string; translation?: string; explanation?: string; createdAt: string }[];
@@ -184,6 +186,11 @@ export function DictionaryPage() {
                    <span className={`text-[15px] font-semibold ${selectedId === res.id ? 'text-[hsl(var(--primary))]' : 'text-[hsl(var(--foreground))]'}`}>
                     {res.term}
                   </span>
+                   {res.usageLabels?.length ? (
+                     <span className="text-[10px] font-mono uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                       {res.usageLabels.join(' · ')}
+                     </span>
+                   ) : null}
                   <span className="text-[12px] text-[hsl(var(--muted-foreground))] mt-1 flex items-center gap-2 w-full">
                     {res.partOfSpeech && <em className="text-[hsl(var(--muted-foreground))]">{res.partOfSpeech}</em>}
                     <span className="truncate">{res.translation}</span>
@@ -232,6 +239,9 @@ export function DictionaryPage() {
                     {entry.partOfSpeech && (
                       <span className="badge processing">{entry.partOfSpeech}</span>
                     )}
+                    {entry.usageLabels?.map(label => (
+                      <span key={label} className="badge">{label}</span>
+                    ))}
                     {entry.translation && (
                       <span className="text-[14px] font-medium">{entry.translation}</span>
                     )}

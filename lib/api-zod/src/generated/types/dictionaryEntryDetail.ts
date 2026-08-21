@@ -15,6 +15,7 @@ export interface DictionaryEntryDetail {
   term: string;
   translation: string;
   partOfSpeech: string;
+  usageLabels: string[];
   source: DictionaryEntryDetailSource;
   senses: DictionarySense[];
   examples: DictionaryExample[];

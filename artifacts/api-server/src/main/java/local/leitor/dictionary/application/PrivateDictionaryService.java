@@ -9,10 +9,13 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,6 +39,7 @@ public class PrivateDictionaryService {
     private static final Pattern COLON_ENTRY = Pattern.compile(
         "^\\s*([A-Za-z][A-Za-zÀ-ÿ'’ -]{1,90}?)\\s*:\\s*(.{3,420})\\s*$"
     );
+    private static final Pattern SENSE_NUMBER = Pattern.compile("^\\s*(\\d+)[.)]?\\s*$");
     private static final Pattern EXPRESSION_START = Pattern.compile(
         "^(?:be|make|have|take|give|go|get|keep|let|put|come|fall|find|hold|lose|pay|play|run|see|set|show|stand|stick|throw|turn|break|bring|call|carry|catch|cut|do|draw|drive|drop|eat|face|feel|fill|follow|forget|hand|hit|join|leave|live|look|miss|move|pick|pull|reach|save|send|shake|sleep|speak|spend|start|stay|step|swim|talk|think|try|walk|watch|wear|win|wipe)\\b.*",
         Pattern.CASE_INSENSITIVE
@@ -92,8 +96,8 @@ public class PrivateDictionaryService {
         for (ParsedEntry parsedEntry : parsed.entries()) {
             String entryId = UUID.randomUUID().toString();
             jdbc.update("""
-            INSERT INTO dictionary_entries (id, source_id, headword, term, normalized_term, translation, part_of_speech)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO dictionary_entries (id, source_id, headword, term, normalized_term, translation, part_of_speech, usage_labels)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 entryId,
                 sourceId,
@@ -101,17 +105,21 @@ public class PrivateDictionaryService {
                 parsedEntry.term(),
                 normalize(parsedEntry.term()),
                 parsedEntry.translation(),
-                parsedEntry.partOfSpeech()
+                parsedEntry.partOfSpeech(),
+                String.join("|", parsedEntry.usageLabels())
             );
-            jdbc.update("""
-                INSERT INTO dictionary_senses (id, entry_id, definition, translation, position)
-                VALUES (?, ?, ?, ?, 1)
-                """,
-                UUID.randomUUID().toString(),
-                entryId,
-                parsedEntry.definition(),
-                parsedEntry.translation()
-            );
+            for (ParsedSense sense : parsedEntry.senses()) {
+                jdbc.update("""
+                    INSERT INTO dictionary_senses (id, entry_id, definition, translation, position)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    UUID.randomUUID().toString(),
+                    entryId,
+                    sense.definition(),
+                    sense.translation(),
+                    sense.position()
+                );
+            }
         }
 
         SourceSummary source = new SourceSummary(
@@ -130,7 +138,7 @@ public class PrivateDictionaryService {
         String query = safe(rawQuery).trim().toLowerCase(Locale.ROOT);
         String matcher = "%" + query + "%";
         return jdbc.query("""
-            SELECT e.id, e.headword, e.term, e.translation, e.part_of_speech, s.title AS source_title,
+            SELECT e.id, e.headword, e.term, e.translation, e.part_of_speech, e.usage_labels, s.title AS source_title,
               (SELECT COUNT(*) FROM dictionary_examples example WHERE example.entry_id = e.id) AS example_count
             FROM dictionary_entries e
             JOIN dictionary_sources s ON s.id = e.source_id
@@ -144,6 +152,7 @@ public class PrivateDictionaryService {
                 rs.getString("term"),
                 rs.getString("translation"),
                 rs.getString("part_of_speech"),
+                splitLabels(rs.getString("usage_labels")),
                 rs.getString("source_title"),
                 rs.getInt("example_count")
             ),
@@ -154,7 +163,7 @@ public class PrivateDictionaryService {
     @Transactional(readOnly = true)
     public EntryDetail getEntry(String entryId) {
         EntryBase base = jdbc.query("""
-            SELECT e.id, e.headword, e.term, e.translation, e.part_of_speech, s.title, s.publisher
+            SELECT e.id, e.headword, e.term, e.translation, e.part_of_speech, e.usage_labels, s.title, s.publisher
             FROM dictionary_entries e JOIN dictionary_sources s ON s.id = e.source_id
             WHERE e.id = ?
             """,
@@ -165,6 +174,7 @@ public class PrivateDictionaryService {
                     resultSet.getString("term"),
                     resultSet.getString("translation"),
                     resultSet.getString("part_of_speech"),
+                    splitLabels(resultSet.getString("usage_labels")),
                     resultSet.getString("title"),
                     resultSet.getString("publisher")
                 )
@@ -205,7 +215,7 @@ public class PrivateDictionaryService {
             entryId
         );
         return new EntryDetail(
-            base.id(), base.headword(), base.term(), base.translation(), base.partOfSpeech(),
+            base.id(), base.headword(), base.term(), base.translation(), base.partOfSpeech(), base.usageLabels(),
             new SourceInfo(base.sourceTitle(), base.publisher()), senses, examples, cards
         );
     }
@@ -304,21 +314,13 @@ public class PrivateDictionaryService {
             if (line.isBlank()) continue;
             Matcher colonEntry = COLON_ENTRY.matcher(line);
             if (colonEntry.matches()) {
-                String term = colonEntry.group(1);
-                String definition = colonEntry.group(2);
-                int translationIndex = nextNonBlankLine(lines, index + 1);
-                if (translationIndex >= 0) {
-                    String candidateTranslation = lines[translationIndex].trim().replaceAll("\\s+", " ");
-                    if (!looksLikeExample(candidateTranslation)
-                        && !COLON_ENTRY.matcher(candidateTranslation).matches()
-                        && candidateTranslation.length() >= 3
-                        && candidateTranslation.length() <= 420) {
-                     addParsed(parsed, term, definition, candidateTranslation, term);
-                        index = translationIndex;
-                        continue;
-                    }
+                if (!looksLikeDictionaryHeadword(colonEntry.group(1))) {
+                    skipped++;
+                    continue;
                 }
-                addParsed(parsed, term, definition, shortenTranslation(definition), term);
+                ParsedBlock block = parseColonBlock(lines, index, colonEntry.group(1), colonEntry.group(2));
+                addParsed(parsed, block);
+                index = block.endIndex();
                 continue;
             }
             Matcher inline = INLINE_ENTRY.matcher(line);
@@ -345,22 +347,69 @@ public class PrivateDictionaryService {
     }
 
     private static void addParsed(Map<String, ParsedEntry> entries, String rawTerm, String rawDefinition) {
-        addParsed(entries, rawTerm, rawDefinition, shortenTranslation(rawDefinition), "");
+        addParsed(entries, new ParsedBlock(
+            new ParsedEntry(
+                promoteHeadwordToExpression(rawTerm, rawDefinition),
+                "",
+                List.of(new ParsedSense(rawDefinition.trim(), shortenTranslation(rawDefinition), 1)),
+                List.of(),
+                detectPartOfSpeech(rawDefinition)
+            ),
+            -1
+        ));
     }
 
-    private static void addParsed(
-        Map<String, ParsedEntry> entries,
-        String rawTerm,
-        String rawDefinition,
-        String rawTranslation,
-        String rawHeadword
-    ) {
-        String term = promoteHeadwordToExpression(rawTerm, rawDefinition);
-        String definition = rawDefinition.trim();
-        String translation = rawTranslation.trim();
-        if (term.length() < 2 || definition.isBlank() || translation.isBlank()) return;
-        String key = normalize(term);
-        entries.putIfAbsent(key, new ParsedEntry(term, safe(rawHeadword).trim(), definition, shortenTranslation(translation), detectPartOfSpeech(definition)));
+    private static void addParsed(Map<String, ParsedEntry> entries, ParsedBlock block) {
+        ParsedEntry entry = block.entry();
+        if (entry.term().length() < 2 || entry.senses().isEmpty()) return;
+        entries.putIfAbsent(normalize(entry.term()), entry);
+    }
+
+    private static ParsedBlock parseColonBlock(String[] lines, int startIndex, String rawHeadword, String rawDefinition) {
+        String term = promoteHeadwordToExpression(rawHeadword, rawDefinition);
+        List<ParsedSense> senses = new ArrayList<>();
+        Set<String> usageLabels = new HashSet<>();
+        int position = 1;
+        int index = startIndex + 1;
+        while (index < lines.length) {
+            String line = cleanLine(lines[index]);
+            if (line.isBlank()) {
+                index++;
+                continue;
+            }
+            if (index > startIndex && COLON_ENTRY.matcher(line).matches()) break;
+            String usage = usageLabel(line);
+            if (usage != null) {
+                usageLabels.add(usage);
+                index++;
+                continue;
+            }
+            if (SENSE_NUMBER.matcher(line).matches()) {
+                position = Integer.parseInt(SENSE_NUMBER.matcher(line).replaceFirst("$1"));
+                index++;
+                continue;
+            }
+            if (looksLikeExample(line)) {
+                index++;
+                continue;
+            }
+            int next = nextNonBlankLine(lines, index + 1);
+            if (next >= 0 && looksLikeExampleStart(cleanLine(lines[next]))) {
+                index = skipExample(lines, index);
+                continue;
+            }
+            if (line.length() >= 3 && line.length() <= 420) {
+                senses.add(new ParsedSense(rawDefinition.trim(), line, position++));
+            }
+            index++;
+        }
+        if (senses.isEmpty()) {
+            senses.add(new ParsedSense(rawDefinition.trim(), shortenTranslation(rawDefinition), 1));
+        }
+        return new ParsedBlock(
+            new ParsedEntry(term, rawHeadword.trim(), senses, usageLabels.stream().sorted().toList(), detectPartOfSpeech(rawDefinition)),
+            index - 1
+        );
     }
 
     private static String promoteHeadwordToExpression(String rawTerm, String rawDefinition) {
@@ -381,6 +430,44 @@ public class PrivateDictionaryService {
 
     private static boolean looksLikeExample(String line) {
         return line.contains(" / ") || line.endsWith("/") || line.startsWith("/");
+    }
+
+    private static boolean looksLikeExampleStart(String line) {
+        return line.startsWith("/");
+    }
+
+    private static int skipExample(String[] lines, int start) {
+        int index = nextNonBlankLine(lines, start + 1);
+        if (index < 0) return lines.length;
+        int afterExample = nextNonBlankLine(lines, index + 1);
+        return afterExample < 0 ? lines.length : afterExample;
+    }
+
+    private static String cleanLine(String line) {
+        return line.trim().replaceAll("\\s+", " ");
+    }
+
+    private static String usageLabel(String line) {
+        return switch (line.toLowerCase(Locale.ROOT)) {
+            case "amer" -> "Amer";
+            case "brit" -> "Brit";
+            case "dit" -> "dit";
+            case "form" -> "form";
+            case "inf" -> "inf";
+            case "pop" -> "pop";
+            case "comp" -> "comp";
+            case "vulg" -> "vulg";
+            default -> null;
+        };
+    }
+
+    private static boolean looksLikeDictionaryHeadword(String headword) {
+        return headword.trim().matches("[A-Za-z][A-Za-z'’\\-]*(?:\\s+[A-Za-z][A-Za-z'’\\-]*)?");
+    }
+
+    private static List<String> splitLabels(String labels) {
+        if (labels == null || labels.isBlank()) return List.of();
+        return Arrays.stream(labels.split("\\|")).filter(label -> !label.isBlank()).toList();
     }
 
     private static String shortenTranslation(String definition) {
@@ -448,19 +535,26 @@ public class PrivateDictionaryService {
     public record SourceSummary(String id, String title, String publisher, String isbn, int entryCount, String createdAt) {}
     public record ImportResult(SourceSummary source, int importedEntries, int skippedLines, List<String> warnings) {}
     public record EntrySummary(
-        String id, String headword, String term, String translation, String partOfSpeech, String sourceTitle, int exampleCount
+        String id, String headword, String term, String translation, String partOfSpeech, List<String> usageLabels,
+        String sourceTitle, int exampleCount
     ) {}
     public record SourceInfo(String title, String publisher) {}
     public record Sense(String id, String definition, String translation) {}
     public record GeneratedExample(String id, String sentence, String translation, String explanation, String createdAt) {}
     public record StudyCard(String id, String term, String translation, String exampleId) {}
     public record EntryDetail(
-        String id, String headword, String term, String translation, String partOfSpeech, SourceInfo source,
+        String id, String headword, String term, String translation, String partOfSpeech, List<String> usageLabels, SourceInfo source,
         List<Sense> senses, List<GeneratedExample> examples, List<StudyCard> cards
     ) {}
-    record ParsedEntry(String term, String headword, String definition, String translation, String partOfSpeech) {}
+    record ParsedEntry(String term, String headword, List<ParsedSense> senses, List<String> usageLabels, String partOfSpeech) {
+        String definition() { return senses.getFirst().definition(); }
+        String translation() { return senses.getFirst().translation(); }
+    }
+    record ParsedSense(String definition, String translation, int position) {}
+    record ParsedBlock(ParsedEntry entry, int endIndex) {}
     record ParseResult(List<ParsedEntry> entries, int skippedLines, List<String> warnings) {}
     private record EntryBase(
-        String id, String headword, String term, String translation, String partOfSpeech, String sourceTitle, String publisher
+        String id, String headword, String term, String translation, String partOfSpeech, List<String> usageLabels,
+        String sourceTitle, String publisher
     ) {}
 }

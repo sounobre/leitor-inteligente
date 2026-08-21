@@ -12,6 +12,7 @@ export interface DictionaryEntrySummary {
   term: string;
   translation: string;
   partOfSpeech: string;
+  usageLabels: string[];
   sourceTitle: string;
   exampleCount: number;
 }

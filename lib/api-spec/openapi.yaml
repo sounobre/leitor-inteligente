@@ -415,9 +415,12 @@ components:
         term: { type: string }
         translation: { type: string }
         partOfSpeech: { type: string }
+        usageLabels:
+          type: array
+          items: { type: string }
         sourceTitle: { type: string }
         exampleCount: { type: number, integer: true }
-      required: [id, headword, term, translation, partOfSpeech, sourceTitle, exampleCount]
+      required: [id, headword, term, translation, partOfSpeech, usageLabels, sourceTitle, exampleCount]
     DictionarySense:
       type: object
       properties:
@@ -450,6 +453,9 @@ components:
         term: { type: string }
         translation: { type: string }
         partOfSpeech: { type: string }
+        usageLabels:
+          type: array
+          items: { type: string }
         source:
           type: object
           properties:
@@ -465,7 +471,7 @@ components:
         cards:
           type: array
           items: { $ref: "#/components/schemas/DictionaryStudyCard" }
-      required: [id, headword, term, translation, partOfSpeech, source, senses, examples, cards]
+      required: [id, headword, term, translation, partOfSpeech, usageLabels, source, senses, examples, cards]
     DictionaryExampleRequest:
       type: object
       properties:

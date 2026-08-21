@@ -40,3 +40,7 @@ No terceiro formato, o texto antes dos dois-pontos é apenas o marcador alfabét
 O marcador alfabético também é preservado separadamente como cabeçalho visual — por exemplo, `amends:` — sem ser confundido com o termo principal da entrada.
 
 EPUBs com uma estrutura muito visual, em colunas ou com cada definição fragmentada em diversos elementos podem exigir evolução do normalizador. As linhas que não forem reconhecidas são informadas no resultado da importação.
+
+O importador também reconhece abreviações de uso (`Amer`, `Brit`, `dit`, `form`, `inf`, `pop`, `comp` e `vulg`) e as mantém como metadados do verbete. Em entradas com sentidos numerados, cada tradução é armazenada como um sentido separado e na ordem original.
+
+Exemplos bilíngues do EPUB são reconhecidos para não serem confundidos com traduções ou novos verbetes, mas não são persistidos nem sincronizados. A tela pode gerar exemplos originais usando o Ollama local.

@@ -209,6 +209,7 @@ export const SearchDictionaryEntriesResponseItem = zod.object({
   "term": zod.string(),
   "translation": zod.string(),
   "partOfSpeech": zod.string(),
+  "usageLabels": zod.array(zod.string()),
   "sourceTitle": zod.string(),
   "exampleCount": zod.number()
 })
@@ -254,6 +255,7 @@ export const GetDictionaryEntryResponse = zod.object({
   "term": zod.string(),
   "translation": zod.string(),
   "partOfSpeech": zod.string(),
+  "usageLabels": zod.array(zod.string()),
   "source": zod.object({
   "title": zod.string(),
   "publisher": zod.string()
