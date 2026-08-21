@@ -1,4 +1,4 @@
-import { BookMarked, BookOpen, Compass, Library, Settings2 } from 'lucide-react';
+import { BookMarked, BookOpen, Compass, Library, NotebookText, Settings2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useHealthCheck, getHealthCheckQueryKey } from '@workspace/api-client-react';
@@ -7,6 +7,7 @@ const navItems = [
   { href: '/', label: 'Visão geral', icon: Compass },
   { href: '/library', label: 'Biblioteca', icon: Library },
   { href: '/specialists', label: 'Especialistas', icon: BookMarked },
+  { href: '/dictionary', label: 'Dicionário', icon: NotebookText },
   { href: '/settings', label: 'Preferências', icon: Settings2 },
 ];
 

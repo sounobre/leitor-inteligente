@@ -1,11 +1,11 @@
-import { BookMarked, BookOpen, FilePlus2, Library as LibraryIcon, RefreshCw, Sparkles } from 'lucide-react';
+import { BookMarked, BookOpen, FilePlus2, Library as LibraryIcon, NotebookText, RefreshCw, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetDashboardQueryKey, getListBooksQueryKey, useListBooks } from '@workspace/api-client-react';
 import { BookCard } from '@/components/book-card';
 import { ImportDialog } from '@/components/import-dialog';
-import { FANTASY_TRAIL_CARD, SPECIALISTS_CARD } from '@/routes';
+import { DICTIONARY_CARD, FANTASY_TRAIL_CARD, SPECIALISTS_CARD } from '@/routes';
 
 type Filter = 'all' | 'reading' | 'ready';
 
@@ -59,6 +59,16 @@ export function LibraryPage() {
         <h3 style={{ margin: 0, fontSize: '22px', letterSpacing: '-0.04em' }}>{SPECIALISTS_CARD.title}</h3>
         <p style={{ margin: 0, fontSize: '13px', color: 'hsl(var(--muted-foreground))', lineHeight: 1.5 }}>
           {SPECIALISTS_CARD.description}
+        </p>
+      </Link>
+      <Link href={DICTIONARY_CARD.href} className="trail-card" data-testid="link-private-dictionary">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'hsl(var(--primary))' }}>
+          <NotebookText size={16} />
+          <span style={{ font: '10px var(--app-font-mono)', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600 }}>Acervo pessoal</span>
+        </div>
+        <h3 style={{ margin: 0, fontSize: '22px', letterSpacing: '-0.04em' }}>{DICTIONARY_CARD.title}</h3>
+        <p style={{ margin: 0, fontSize: '13px', color: 'hsl(var(--muted-foreground))', lineHeight: 1.5 }}>
+          {DICTIONARY_CARD.description}
         </p>
       </Link>
     </div>

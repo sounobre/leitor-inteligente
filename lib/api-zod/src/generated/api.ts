@@ -196,3 +196,126 @@ export const GetDashboardResponse = zod.object({
 })
 
 
+/**
+ * @summary Search private dictionary entries
+ */
+export const SearchDictionaryEntriesQueryParams = zod.object({
+  "query": zod.coerce.string().optional()
+})
+
+export const SearchDictionaryEntriesResponseItem = zod.object({
+  "id": zod.string(),
+  "term": zod.string(),
+  "translation": zod.string(),
+  "partOfSpeech": zod.string(),
+  "sourceTitle": zod.string(),
+  "exampleCount": zod.number()
+})
+export const SearchDictionaryEntriesResponse = zod.array(SearchDictionaryEntriesResponseItem)
+
+
+/**
+ * @summary Import a private EPUB dictionary
+ */
+export const ImportPrivateDictionaryBody = zod.object({
+  "title": zod.string(),
+  "publisher": zod.string().optional(),
+  "isbn": zod.string().optional(),
+  "fileName": zod.string(),
+  "content": zod.string().describe('Base64 data URL with the private EPUB file.'),
+  "privateAcknowledged": zod.boolean()
+})
+
+export const ImportPrivateDictionaryResponse = zod.object({
+  "source": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "isbn": zod.string(),
+  "entryCount": zod.number().describe('Number of parsed entries'),
+  "createdAt": zod.string()
+}),
+  "importedEntries": zod.number(),
+  "skippedLines": zod.number(),
+  "warnings": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Get an imported dictionary entry
+ */
+export const GetDictionaryEntryParams = zod.object({
+  "entryId": zod.coerce.string()
+})
+
+export const GetDictionaryEntryResponse = zod.object({
+  "id": zod.string(),
+  "term": zod.string(),
+  "translation": zod.string(),
+  "partOfSpeech": zod.string(),
+  "source": zod.object({
+  "title": zod.string(),
+  "publisher": zod.string()
+}),
+  "senses": zod.array(zod.object({
+  "id": zod.string(),
+  "definition": zod.string(),
+  "translation": zod.string()
+})),
+  "examples": zod.array(zod.object({
+  "id": zod.string(),
+  "sentence": zod.string(),
+  "translation": zod.string(),
+  "explanation": zod.string(),
+  "createdAt": zod.string()
+})),
+  "cards": zod.array(zod.object({
+  "id": zod.string(),
+  "term": zod.string(),
+  "translation": zod.string(),
+  "exampleId": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Generate a local Ollama example for a private entry
+ */
+export const GenerateDictionaryExampleParams = zod.object({
+  "entryId": zod.coerce.string()
+})
+
+export const GenerateDictionaryExampleBody = zod.object({
+  "provider": zod.enum(['ollama']),
+  "endpoint": zod.string(),
+  "model": zod.string()
+})
+
+export const GenerateDictionaryExampleResponse = zod.object({
+  "id": zod.string(),
+  "sentence": zod.string(),
+  "translation": zod.string(),
+  "explanation": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Create a study card from a private dictionary entry
+ */
+export const CreateDictionaryStudyCardParams = zod.object({
+  "entryId": zod.coerce.string()
+})
+
+export const CreateDictionaryStudyCardBody = zod.object({
+  "exampleId": zod.string().optional()
+})
+
+export const CreateDictionaryStudyCardResponse = zod.object({
+  "id": zod.string(),
+  "term": zod.string(),
+  "translation": zod.string(),
+  "exampleId": zod.string().nullish()
+})
+
+

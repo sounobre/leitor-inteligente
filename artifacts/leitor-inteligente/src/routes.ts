@@ -1,5 +1,6 @@
 export const FANTASY_TRAIL_ROUTE = '/trails/fantasy';
 export const SPECIALISTS_ROUTE = '/specialists';
+export const DICTIONARY_ROUTE = '/dictionary';
 
 export const FANTASY_TRAIL_CARD = {
   href: FANTASY_TRAIL_ROUTE,
@@ -13,4 +14,11 @@ export const SPECIALISTS_CARD = {
   title: 'Especialistas de estudo',
   description:
     'Vocabulário, phrasal verbs, expressões e mais oito áreas para estudar o inglês por habilidade.',
+} as const;
+
+export const DICTIONARY_CARD = {
+  href: DICTIONARY_ROUTE,
+  title: 'Dicionário pessoal',
+  description:
+    'Importe uma referência privada, pesquise expressões e crie exemplos inéditos com o Ollama local.',
 } as const;

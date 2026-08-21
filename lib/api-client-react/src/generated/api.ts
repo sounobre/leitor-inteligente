@@ -23,11 +23,20 @@ import type {
   Book,
   BookDetail,
   Dashboard,
+  DictionaryCardRequest,
+  DictionaryEntryDetail,
+  DictionaryEntrySummary,
+  DictionaryExample,
+  DictionaryExampleRequest,
+  DictionaryImportRequest,
+  DictionaryImportResult,
+  DictionaryStudyCard,
   HealthStatus,
   ImportBookRequest,
   ListOllamaModelsParams,
   ListOpenRouterModelsParams,
-  OllamaModelCatalog
+  OllamaModelCatalog,
+  SearchDictionaryEntriesParams
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -604,4 +613,380 @@ export function useGetDashboard<TData = Awaited<ReturnType<typeof getDashboard>>
 
 
 
+
+export const getSearchDictionaryEntriesUrl = (params?: SearchDictionaryEntriesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/dictionaries?${stringifiedParams}` : `/api/dictionaries`
+}
+
+/**
+ * @summary Search private dictionary entries
+ */
+export const searchDictionaryEntries = async (params?: SearchDictionaryEntriesParams, options?: Parameters<typeof customFetch>[1]): Promise<DictionaryEntrySummary[]> => {
+
+  return customFetch<DictionaryEntrySummary[]>(getSearchDictionaryEntriesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchDictionaryEntriesQueryKey = (params?: SearchDictionaryEntriesParams,) => {
+    return [
+    `/api/dictionaries`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchDictionaryEntriesQueryOptions = <TData = Awaited<ReturnType<typeof searchDictionaryEntries>>, TError = ErrorType<unknown>>(params?: SearchDictionaryEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchDictionaryEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchDictionaryEntriesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchDictionaryEntries>>> = ({ signal }) => searchDictionaryEntries(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchDictionaryEntries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchDictionaryEntriesQueryResult = NonNullable<Awaited<ReturnType<typeof searchDictionaryEntries>>>
+export type SearchDictionaryEntriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search private dictionary entries
+ */
+
+export function useSearchDictionaryEntries<TData = Awaited<ReturnType<typeof searchDictionaryEntries>>, TError = ErrorType<unknown>>(
+ params?: SearchDictionaryEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchDictionaryEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchDictionaryEntriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getImportPrivateDictionaryUrl = () => {
+
+
+
+
+  return `/api/dictionaries/import`
+}
+
+/**
+ * @summary Import a private EPUB dictionary
+ */
+export const importPrivateDictionary = async (dictionaryImportRequest: DictionaryImportRequest, options?: Parameters<typeof customFetch>[1]): Promise<DictionaryImportResult> => {
+
+  return customFetch<DictionaryImportResult>(getImportPrivateDictionaryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(dictionaryImportRequest)
+  }
+);}
+
+
+
+
+
+export const getImportPrivateDictionaryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importPrivateDictionary>>, TError,{data: BodyType<DictionaryImportRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importPrivateDictionary>>, TError,{data: BodyType<DictionaryImportRequest>}, TContext> => {
+
+const mutationKey = ['importPrivateDictionary'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importPrivateDictionary>>, {data: BodyType<DictionaryImportRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importPrivateDictionary(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportPrivateDictionaryMutationResult = NonNullable<Awaited<ReturnType<typeof importPrivateDictionary>>>
+    export type ImportPrivateDictionaryMutationBody = BodyType<DictionaryImportRequest>
+    export type ImportPrivateDictionaryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Import a private EPUB dictionary
+ */
+export const useImportPrivateDictionary = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importPrivateDictionary>>, TError,{data: BodyType<DictionaryImportRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importPrivateDictionary>>,
+        TError,
+        {data: BodyType<DictionaryImportRequest>},
+        TContext
+      > => {
+      return useMutation(getImportPrivateDictionaryMutationOptions(options));
+    }
+
+export const getGetDictionaryEntryUrl = (entryId: string,) => {
+
+
+
+
+  return `/api/dictionaries/${entryId}`
+}
+
+/**
+ * @summary Get an imported dictionary entry
+ */
+export const getDictionaryEntry = async (entryId: string, options?: Parameters<typeof customFetch>[1]): Promise<DictionaryEntryDetail> => {
+
+  return customFetch<DictionaryEntryDetail>(getGetDictionaryEntryUrl(entryId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDictionaryEntryQueryKey = (entryId: string,) => {
+    return [
+    `/api/dictionaries/${entryId}`
+    ] as const;
+    }
+
+
+export const getGetDictionaryEntryQueryOptions = <TData = Awaited<ReturnType<typeof getDictionaryEntry>>, TError = ErrorType<unknown>>(entryId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDictionaryEntry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDictionaryEntryQueryKey(entryId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDictionaryEntry>>> = ({ signal }) => getDictionaryEntry(entryId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: entryId !== null && entryId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDictionaryEntry>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDictionaryEntryQueryResult = NonNullable<Awaited<ReturnType<typeof getDictionaryEntry>>>
+export type GetDictionaryEntryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get an imported dictionary entry
+ */
+
+export function useGetDictionaryEntry<TData = Awaited<ReturnType<typeof getDictionaryEntry>>, TError = ErrorType<unknown>>(
+ entryId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDictionaryEntry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDictionaryEntryQueryOptions(entryId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGenerateDictionaryExampleUrl = (entryId: string,) => {
+
+
+
+
+  return `/api/dictionaries/${entryId}/examples`
+}
+
+/**
+ * @summary Generate a local Ollama example for a private entry
+ */
+export const generateDictionaryExample = async (entryId: string,
+    dictionaryExampleRequest: DictionaryExampleRequest, options?: Parameters<typeof customFetch>[1]): Promise<DictionaryExample> => {
+
+  return customFetch<DictionaryExample>(getGenerateDictionaryExampleUrl(entryId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(dictionaryExampleRequest)
+  }
+);}
+
+
+
+
+
+export const getGenerateDictionaryExampleMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateDictionaryExample>>, TError,{entryId: string;data: BodyType<DictionaryExampleRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateDictionaryExample>>, TError,{entryId: string;data: BodyType<DictionaryExampleRequest>}, TContext> => {
+
+const mutationKey = ['generateDictionaryExample'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateDictionaryExample>>, {entryId: string;data: BodyType<DictionaryExampleRequest>}> = (props) => {
+          const {entryId,data} = props ?? {};
+
+          return  generateDictionaryExample(entryId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateDictionaryExampleMutationResult = NonNullable<Awaited<ReturnType<typeof generateDictionaryExample>>>
+    export type GenerateDictionaryExampleMutationBody = BodyType<DictionaryExampleRequest>
+    export type GenerateDictionaryExampleMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Generate a local Ollama example for a private entry
+ */
+export const useGenerateDictionaryExample = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateDictionaryExample>>, TError,{entryId: string;data: BodyType<DictionaryExampleRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof generateDictionaryExample>>,
+        TError,
+        {entryId: string;data: BodyType<DictionaryExampleRequest>},
+        TContext
+      > => {
+      return useMutation(getGenerateDictionaryExampleMutationOptions(options));
+    }
+
+export const getCreateDictionaryStudyCardUrl = (entryId: string,) => {
+
+
+
+
+  return `/api/dictionaries/${entryId}/cards`
+}
+
+/**
+ * @summary Create a study card from a private dictionary entry
+ */
+export const createDictionaryStudyCard = async (entryId: string,
+    dictionaryCardRequest?: DictionaryCardRequest, options?: Parameters<typeof customFetch>[1]): Promise<DictionaryStudyCard> => {
+
+  return customFetch<DictionaryStudyCard>(getCreateDictionaryStudyCardUrl(entryId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(dictionaryCardRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateDictionaryStudyCardMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDictionaryStudyCard>>, TError,{entryId: string;data?: BodyType<DictionaryCardRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createDictionaryStudyCard>>, TError,{entryId: string;data?: BodyType<DictionaryCardRequest>}, TContext> => {
+
+const mutationKey = ['createDictionaryStudyCard'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDictionaryStudyCard>>, {entryId: string;data?: BodyType<DictionaryCardRequest>}> = (props) => {
+          const {entryId,data} = props ?? {};
+
+          return  createDictionaryStudyCard(entryId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDictionaryStudyCardMutationResult = NonNullable<Awaited<ReturnType<typeof createDictionaryStudyCard>>>
+    export type CreateDictionaryStudyCardMutationBody = BodyType<DictionaryCardRequest> | undefined
+    export type CreateDictionaryStudyCardMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a study card from a private dictionary entry
+ */
+export const useCreateDictionaryStudyCard = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDictionaryStudyCard>>, TError,{entryId: string;data?: BodyType<DictionaryCardRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createDictionaryStudyCard>>,
+        TError,
+        {entryId: string;data?: BodyType<DictionaryCardRequest>},
+        TContext
+      > => {
+      return useMutation(getCreateDictionaryStudyCardMutationOptions(options));
+    }
 

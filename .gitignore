@@ -48,3 +48,8 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Private reference sources and local exports must never be committed.
+private-data/
+private-dictionaries/
+*.dictionary.sqlite

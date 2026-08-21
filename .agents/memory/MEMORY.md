@@ -6,3 +6,5 @@
 - [Fantasy trail translations](fantasy-trail-translations.md) — generated card variants need contextual Portuguese glosses, never a generic “expressão com…” label.
 - [Mobile offline boundary](mobile-offline-boundary.md) — Ollama stays on the computer; mobile studies from locally synchronized books and plans while offline.
 - [Specialist study progress](specialist-study-progress.md) — specialist catalog is static and review states stay local to each browser by design.
+- [Private dictionary boundary](private-dictionary-boundary.md) — private reference sources stay local; derived cards travel, original dictionary content does not.
+- [Dictionary EPUB entry shape](dictionary-epub-entry-shape.md) — entries may be term-colon-English, Portuguese translation, then a bilingual example block.

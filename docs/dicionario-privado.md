@@ -1,0 +1,34 @@
+# Dicionário privado para estudo
+
+Esta área é destinada a obras de referência que você possui e usa no seu computador. Ela não transforma um dicionário comercial em conteúdo público.
+
+## Depois de fazer pull
+
+1. Inicie o PostgreSQL usado pelo projeto e inicie a API e o web app pelos workflows ou comandos existentes.
+2. Inicie o Ollama localmente, com um modelo já baixado.
+3. Abra **Dicionário** na aplicação e importe um arquivo `.epub`.
+4. Informe os metadados que deseja manter e confirme que a fonte é para uso pessoal e privado.
+
+O arquivo EPUB é lido em memória para extrair os verbetes e não é salvo no banco ou no repositório. Pastas `private-data/` e `private-dictionaries/` ficam ignoradas pelo Git para permitir que você guarde suas cópias locais fora do controle de versão.
+
+## Limites de privacidade
+
+- A importação aceita apenas EPUBs de até 50 MB.
+- O banco armazena a fonte, entradas, sentidos, exemplos gerados e cartões derivados; ele não armazena o EPUB original.
+- A geração de frases aceita somente o provedor Ollama em `localhost`, `127.0.0.1` ou `::1`.
+- O OpenRouter é bloqueado para essa fonte privada.
+- As frases dos cartões são geradas sob demanda e devem ser originais; não são exemplos copiados da obra.
+- O aplicativo mobile deve receber somente cartões derivados, não o conteúdo completo do dicionário.
+
+## Formato inicial suportado
+
+O importador é tolerante com EPUBs cujo texto extraído apresente entradas em uma destas formas:
+
+```text
+break the ice — quebrar o gelo; iniciar uma conversa
+
+look after
+cuidar de; tomar conta de
+```
+
+EPUBs com uma estrutura muito visual, em colunas ou com cada definição fragmentada em diversos elementos podem exigir evolução do normalizador. As linhas que não forem reconhecidas são informadas no resultado da importação.

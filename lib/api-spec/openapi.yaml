@@ -124,10 +124,99 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Dashboard"
+  /dictionaries:
+    get:
+      operationId: searchDictionaryEntries
+      tags: [study]
+      summary: Search private dictionary entries
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Matching private dictionary entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DictionaryEntrySummary" }
+  /dictionaries/import:
+    post:
+      operationId: importPrivateDictionary
+      tags: [study]
+      summary: Import a private EPUB dictionary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DictionaryImportRequest" }
+      responses:
+        "201":
+          description: Imported private source summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DictionaryImportResult" }
+  /dictionaries/{entryId}:
+    get:
+      operationId: getDictionaryEntry
+      tags: [study]
+      summary: Get an imported dictionary entry
+      parameters:
+        - $ref: "#/components/parameters/DictionaryEntryId"
+      responses:
+        "200":
+          description: Dictionary entry and locally generated examples
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DictionaryEntryDetail" }
+  /dictionaries/{entryId}/examples:
+    post:
+      operationId: generateDictionaryExample
+      tags: [study]
+      summary: Generate a local Ollama example for a private entry
+      parameters:
+        - $ref: "#/components/parameters/DictionaryEntryId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DictionaryExampleRequest" }
+      responses:
+        "201":
+          description: Original local example
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DictionaryExample" }
+  /dictionaries/{entryId}/cards:
+    post:
+      operationId: createDictionaryStudyCard
+      tags: [study]
+      summary: Create a study card from a private dictionary entry
+      parameters:
+        - $ref: "#/components/parameters/DictionaryEntryId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DictionaryCardRequest" }
+      responses:
+        "201":
+          description: Created study card
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DictionaryStudyCard" }
 components:
   parameters:
     BookId:
       name: bookId
+      in: path
+      required: true
+      schema:
+        type: string
+    DictionaryEntryId:
+      name: entryId
       in: path
       required: true
       schema:
@@ -288,6 +377,104 @@ components:
           enum: [ollama, openrouter]
           description: Provider used to prepare the plan.
       required: [title, author, sourceType, content, ollamaEndpoint, ollamaModel, provider]
+    DictionaryImportRequest:
+      type: object
+      properties:
+        title: { type: string }
+        publisher: { type: string }
+        isbn: { type: string }
+        fileName: { type: string }
+        content: { type: string, description: Base64 data URL with the private EPUB file. }
+        privateAcknowledged: { type: boolean }
+      required: [title, fileName, content, privateAcknowledged]
+    DictionarySourceSummary:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        publisher: { type: string }
+        isbn: { type: string }
+        entryCount: { type: number, description: Number of parsed entries, integer: true }
+        createdAt: { type: string }
+      required: [id, title, publisher, isbn, entryCount, createdAt]
+    DictionaryImportResult:
+      type: object
+      properties:
+        source: { $ref: "#/components/schemas/DictionarySourceSummary" }
+        importedEntries: { type: number, integer: true }
+        skippedLines: { type: number, integer: true }
+        warnings:
+          type: array
+          items: { type: string }
+      required: [source, importedEntries, skippedLines, warnings]
+    DictionaryEntrySummary:
+      type: object
+      properties:
+        id: { type: string }
+        term: { type: string }
+        translation: { type: string }
+        partOfSpeech: { type: string }
+        sourceTitle: { type: string }
+        exampleCount: { type: number, integer: true }
+      required: [id, term, translation, partOfSpeech, sourceTitle, exampleCount]
+    DictionarySense:
+      type: object
+      properties:
+        id: { type: string }
+        definition: { type: string }
+        translation: { type: string }
+      required: [id, definition, translation]
+    DictionaryExample:
+      type: object
+      properties:
+        id: { type: string }
+        sentence: { type: string }
+        translation: { type: string }
+        explanation: { type: string }
+        createdAt: { type: string }
+      required: [id, sentence, translation, explanation, createdAt]
+    DictionaryStudyCard:
+      type: object
+      properties:
+        id: { type: string }
+        term: { type: string }
+        translation: { type: string }
+        exampleId: { type: [string, "null"] }
+      required: [id, term, translation]
+    DictionaryEntryDetail:
+      type: object
+      properties:
+        id: { type: string }
+        term: { type: string }
+        translation: { type: string }
+        partOfSpeech: { type: string }
+        source:
+          type: object
+          properties:
+            title: { type: string }
+            publisher: { type: string }
+          required: [title, publisher]
+        senses:
+          type: array
+          items: { $ref: "#/components/schemas/DictionarySense" }
+        examples:
+          type: array
+          items: { $ref: "#/components/schemas/DictionaryExample" }
+        cards:
+          type: array
+          items: { $ref: "#/components/schemas/DictionaryStudyCard" }
+      required: [id, term, translation, partOfSpeech, source, senses, examples, cards]
+    DictionaryExampleRequest:
+      type: object
+      properties:
+        provider: { type: string, enum: [ollama] }
+        endpoint: { type: string }
+        model: { type: string }
+      required: [provider, endpoint, model]
+    DictionaryCardRequest:
+      type: object
+      properties:
+        exampleId: { type: string }
     Dashboard:
       type: object
       properties:

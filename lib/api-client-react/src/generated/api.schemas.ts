@@ -147,6 +147,97 @@ export interface ImportBookRequest {
   provider: ImportBookRequestProvider;
 }
 
+export interface DictionaryImportRequest {
+  title: string;
+  publisher?: string;
+  isbn?: string;
+  fileName: string;
+  /** Base64 data URL with the private EPUB file. */
+  content: string;
+  privateAcknowledged: boolean;
+}
+
+export interface DictionarySourceSummary {
+  id: string;
+  title: string;
+  publisher: string;
+  isbn: string;
+  /** Number of parsed entries */
+  entryCount: number;
+  createdAt: string;
+}
+
+export interface DictionaryImportResult {
+  source: DictionarySourceSummary;
+  importedEntries: number;
+  skippedLines: number;
+  warnings: string[];
+}
+
+export interface DictionaryEntrySummary {
+  id: string;
+  term: string;
+  translation: string;
+  partOfSpeech: string;
+  sourceTitle: string;
+  exampleCount: number;
+}
+
+export interface DictionarySense {
+  id: string;
+  definition: string;
+  translation: string;
+}
+
+export interface DictionaryExample {
+  id: string;
+  sentence: string;
+  translation: string;
+  explanation: string;
+  createdAt: string;
+}
+
+export interface DictionaryStudyCard {
+  id: string;
+  term: string;
+  translation: string;
+  /** @nullable */
+  exampleId?: string | null;
+}
+
+export type DictionaryEntryDetailSource = {
+  title: string;
+  publisher: string;
+};
+
+export interface DictionaryEntryDetail {
+  id: string;
+  term: string;
+  translation: string;
+  partOfSpeech: string;
+  source: DictionaryEntryDetailSource;
+  senses: DictionarySense[];
+  examples: DictionaryExample[];
+  cards: DictionaryStudyCard[];
+}
+
+export type DictionaryExampleRequestProvider = typeof DictionaryExampleRequestProvider[keyof typeof DictionaryExampleRequestProvider];
+
+
+export const DictionaryExampleRequestProvider = {
+  ollama: 'ollama',
+} as const;
+
+export interface DictionaryExampleRequest {
+  provider: DictionaryExampleRequestProvider;
+  endpoint: string;
+  model: string;
+}
+
+export interface DictionaryCardRequest {
+  exampleId?: string;
+}
+
 export interface Dashboard {
   minutesToday: number;
   streak: number;
@@ -166,5 +257,9 @@ export type ListOpenRouterModelsParams = {
  * OpenRouter API base URL.
  */
 endpoint?: string;
+};
+
+export type SearchDictionaryEntriesParams = {
+query?: string;
 };
 
