@@ -266,6 +266,14 @@ public class PrivateDictionaryService {
         }
         URI ollamaEndpoint = localOllamaEndpoint(request.endpoint());
         EntryDetail entry = getEntry(entryId);
+        if (!safe(request.sentence()).isBlank() || !safe(request.translation()).isBlank() || !safe(request.explanation()).isBlank()) {
+            String sentence = safe(request.sentence()).trim();
+            String translation = safe(request.translation()).trim();
+            String explanation = safe(request.explanation()).trim();
+            validateGeneratedExample(entry.term(), sentence, translation, explanation);
+            LOGGER.info("dictionary example persisted entry={} provider=ollama model={} source=browser", entryId, request.model().trim());
+            return persistGeneratedExample(entryId, sentence, translation, explanation, request.model().trim());
+        }
         String prompt = """
             Create one original neutral English example for a private language-study card.
             The source is a privately owned dictionary: do not quote or reproduce a dictionary example.
@@ -283,6 +291,7 @@ public class PrivateDictionaryService {
             "prompt", prompt
         );
         try {
+            LOGGER.info("dictionary example generation started entry={} model={} endpointHost={}", entryId, request.model().trim(), ollamaEndpoint.getHost());
             HttpRequest ollamaRequest = HttpRequest.newBuilder()
                 .uri(URI.create(ollamaEndpoint.toString().replaceAll("/+$", "") + "/api/generate"))
                 .header("Content-Type", "application/json")
@@ -298,19 +307,30 @@ public class PrivateDictionaryService {
             String translation = root.path("translation").asText("").trim();
             String explanation = root.path("explanation").asText("").trim();
             validateGeneratedExample(entry.term(), sentence, translation, explanation);
-            String exampleId = UUID.randomUUID().toString();
-            jdbc.update("""
-                INSERT INTO dictionary_examples (id, entry_id, sentence, translation, explanation, provider, model)
-                VALUES (?, ?, ?, ?, ?, 'ollama', ?)
-                """,
-                exampleId, entryId, sentence, translation, explanation, request.model().trim()
-            );
-            return new GeneratedExample(exampleId, sentence, translation, explanation, Instant.now().toString());
+            LOGGER.info("dictionary example generated entry={} model={} source=api", entryId, request.model().trim());
+            return persistGeneratedExample(entryId, sentence, translation, explanation, request.model().trim());
         } catch (BusinessValidationException | StudyPlanGenerationException exception) {
             throw exception;
         } catch (Exception exception) {
-            throw new StudyPlanGenerationException("Não foi possível gerar um exemplo local com o Ollama.", exception);
+            LOGGER.warn("dictionary example generation failed entry={} model={} reason={}", entryId, request.model().trim(), exception.getMessage());
+            throw new StudyPlanGenerationException(
+                "Não foi possível conectar ao Ollama local. Confirme que ele está aberto no seu computador, que o modelo está instalado e que o endpoint está correto.",
+                exception
+            );
         }
+    }
+
+    private GeneratedExample persistGeneratedExample(
+        String entryId, String sentence, String translation, String explanation, String model
+    ) {
+        String exampleId = UUID.randomUUID().toString();
+        jdbc.update("""
+            INSERT INTO dictionary_examples (id, entry_id, sentence, translation, explanation, provider, model)
+            VALUES (?, ?, ?, ?, ?, 'ollama', ?)
+            """,
+            exampleId, entryId, sentence, translation, explanation, model
+        );
+        return new GeneratedExample(exampleId, sentence, translation, explanation, Instant.now().toString());
     }
 
     @Transactional
@@ -576,7 +596,9 @@ public class PrivateDictionaryService {
     public record ImportRequest(
         String title, String publisher, String isbn, String fileName, String content, Boolean privateAcknowledged
     ) {}
-    public record ExampleRequest(String provider, String endpoint, String model) {}
+    public record ExampleRequest(
+        String provider, String endpoint, String model, String sentence, String translation, String explanation
+    ) {}
     public record CardRequest(String exampleId) {}
     public record SourceSummary(String id, String title, String publisher, String isbn, int entryCount, String createdAt) {}
     public record ImportResult(SourceSummary source, int importedEntries, int skippedLines, List<String> warnings) {}

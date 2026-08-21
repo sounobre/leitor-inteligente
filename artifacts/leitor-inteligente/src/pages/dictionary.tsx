@@ -78,11 +78,37 @@ export function DictionaryPage() {
       const prefs = getSettings();
       const endpoint = prefs.provider === 'ollama' ? prefs.endpoint : 'http://localhost:11434';
       const model = prefs.provider === 'ollama' ? prefs.model : 'llama3.2';
-      
+      if (!entry) throw new Error('O verbete ainda está a carregar');
+      const prompt = [
+        'Create one original neutral English example for a private language-study card.',
+        'Do not quote or reproduce a dictionary example. Use the exact term naturally.',
+        'Do not use proper names or book references.',
+        'Return only valid JSON with sentence, translation and explanation.',
+        'Translation and explanation must be Brazilian Portuguese. Sentence maximum: 18 words.',
+        `Term: ${entry.term}`,
+        `Translation hint: ${entry.translation || ''}`,
+        `Part of speech: ${entry.partOfSpeech || ''}`,
+      ].join('\n');
+      let generated: { sentence?: string; translation?: string; explanation?: string };
+      try {
+        const localResponse = await fetch(`${endpoint.replace(/\/+$/, '')}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, stream: false, format: 'json', prompt }),
+        });
+        const localBody = await localResponse.json().catch(() => ({})) as { response?: string; error?: string };
+        if (!localResponse.ok) throw new Error(localBody.error || `Ollama respondeu HTTP ${localResponse.status}.`);
+        generated = JSON.parse(localBody.response || '{}') as typeof generated;
+      } catch (error) {
+        if (error instanceof TypeError) {
+          throw new Error('Não foi possível acessar o Ollama local pelo navegador. Confirme que ele está aberto e permite conexões da aplicação.');
+        }
+        throw error;
+      }
       const res = await fetch(`/api/dictionaries/${selectedId}/examples`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: 'ollama', endpoint, model })
+        body: JSON.stringify({ provider: 'ollama', endpoint, model, ...generated })
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
