@@ -457,6 +457,14 @@ public class PrivateDictionaryService {
             case "pop" -> "pop";
             case "comp" -> "comp";
             case "vulg" -> "vulg";
+            case "vt" -> "vt";
+            case "vi" -> "vi";
+            case "vt+vi" -> "vt+vi";
+            case "refl" -> "refl";
+            case "cul" -> "cul";
+            case "gír" -> "gír";
+            case "mil" -> "mil";
+            case "rel" -> "rel";
             default -> null;
         };
     }

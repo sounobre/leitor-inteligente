@@ -116,4 +116,20 @@ class PrivateDictionaryServiceTest {
         assertEquals("be on someone’s back", result.entries().getFirst().term());
         assertEquals(List.of("inf"), result.entries().getFirst().usageLabels());
     }
+
+    @Test
+    void recognizesPhrasalVerbUsageLabels() {
+        var result = PrivateDictionaryService.parseEntries("""
+            break down: break down
+            vt+vi
+            gír
+            parar de funcionar, falhar; desmontar.
+            The old car broke down. / O carro velho parou de funcionar.
+            """);
+
+        assertEquals(1, result.entries().size());
+        assertEquals("break down", result.entries().getFirst().term());
+        assertEquals(List.of("gír", "vt+vi"), result.entries().getFirst().usageLabels());
+        assertEquals("parar de funcionar, falhar; desmontar.", result.entries().getFirst().translation());
+    }
 }

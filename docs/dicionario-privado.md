@@ -41,6 +41,8 @@ O marcador alfabético também é preservado separadamente como cabeçalho visua
 
 EPUBs com uma estrutura muito visual, em colunas ou com cada definição fragmentada em diversos elementos podem exigir evolução do normalizador. As linhas que não forem reconhecidas são informadas no resultado da importação.
 
-O importador também reconhece abreviações de uso (`Amer`, `Brit`, `dit`, `form`, `inf`, `pop`, `comp` e `vulg`) e as mantém como metadados do verbete. Em entradas com sentidos numerados, cada tradução é armazenada como um sentido separado e na ordem original.
+O importador também reconhece abreviações de uso. Para dicionários de expressões, são aceitos `Amer`, `Brit`, `dit`, `form`, `inf`, `pop`, `comp` e `vulg`. Para dicionários de phrasal verbs, também são aceitos `vt` (verbo transitivo), `vi` (verbo intransitivo), `vt+vi` (verbo transitivo e intransitivo), `refl` (verbo reflexivo), `cul` (culinária), `gír` (gíria), `mil` (militar) e `rel` (religião). Todos são mantidos como metadados do verbete.
+
+Em entradas com sentidos numerados, cada tradução é armazenada como um sentido separado e na ordem original.
 
 Exemplos bilíngues do EPUB são reconhecidos para não serem confundidos com traduções ou novos verbetes, mas não são persistidos nem sincronizados. A tela pode gerar exemplos originais usando o Ollama local.
