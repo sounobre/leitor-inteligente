@@ -242,20 +242,7 @@ export function DictionaryPage() {
                     {entry.usageLabels?.map(label => (
                       <span key={label} className="badge">{label}</span>
                     ))}
-                    {entry.translation && (
-                      <span className="text-[14px] font-medium">{entry.translation}</span>
-                    )}
                   </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
-                    {entry.source?.title || 'Dicionário Privado'}
-                  </span>
-                  {entry.source?.publisher && (
-                    <span className="block text-[11px] text-[hsl(var(--muted-foreground))] opacity-70 mt-1">
-                      {entry.source.publisher}
-                    </span>
-                  )}
                 </div>
               </div>
 
