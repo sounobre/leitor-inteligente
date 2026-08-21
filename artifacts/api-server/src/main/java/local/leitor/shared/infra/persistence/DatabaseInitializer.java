@@ -95,5 +95,22 @@ public class DatabaseInitializer {
         """);
     jdbc.execute("CREATE INDEX IF NOT EXISTS idx_dictionary_entries_term ON dictionary_entries (normalized_term)");
     jdbc.execute("CREATE INDEX IF NOT EXISTS idx_dictionary_entries_translation ON dictionary_entries (lower(translation))");
+    // Older imports used the alphabetical headword (for example, "amends")
+    // instead of the expression that follows it (for example, "make amends").
+    // Repair only the recognizably English expression-shaped rows.
+    jdbc.update("""
+        WITH repaired AS (
+          SELECT e.id,
+            trim(regexp_replace(regexp_replace(s.definition, '\\s*\\([^)]*\\)', '', 'g'), '\\s+', ' ', 'g')) AS expression
+          FROM dictionary_entries e
+          JOIN dictionary_senses s ON s.entry_id = e.id AND s.position = 1
+          WHERE e.term !~ '\\s'
+            AND lower(s.definition) ~ '^(be|make|have|take|give|go|get|keep|let|put|come|fall|find|hold|lose|pay|play|run|see|set|show|stand|stick|throw|turn|break|bring|call|carry|catch|cut|do|draw|drive|drop|eat|face|feel|fill|follow|forget|hand|hit|join|leave|live|look|miss|move|pick|pull|reach|save|send|shake|sleep|speak|spend|start|stay|step|swim|talk|think|try|walk|watch|wear|win|wipe)\\s'
+        )
+        UPDATE dictionary_entries e
+        SET term = repaired.expression, normalized_term = lower(repaired.expression)
+        FROM repaired
+        WHERE e.id = repaired.id
+        """);
   }
 }

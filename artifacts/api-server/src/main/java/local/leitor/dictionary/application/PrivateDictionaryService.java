@@ -36,6 +36,10 @@ public class PrivateDictionaryService {
     private static final Pattern COLON_ENTRY = Pattern.compile(
         "^\\s*([A-Za-z][A-Za-zÀ-ÿ'’ -]{1,90}?)\\s*:\\s*(.{3,420})\\s*$"
     );
+    private static final Pattern EXPRESSION_START = Pattern.compile(
+        "^(?:be|make|have|take|give|go|get|keep|let|put|come|fall|find|hold|lose|pay|play|run|see|set|show|stand|stick|throw|turn|break|bring|call|carry|catch|cut|do|draw|drive|drop|eat|face|feel|fill|follow|forget|hand|hit|join|leave|live|look|miss|move|pick|pull|reach|save|send|shake|sleep|speak|spend|start|stay|step|swim|talk|think|try|walk|watch|wear|win|wipe)\\b.*",
+        Pattern.CASE_INSENSITIVE
+    );
     private static final Pattern TERM_ONLY = Pattern.compile("^[A-Za-z][A-Za-z'’ -]{1,90}$");
     private static final int MAX_ENTRIES_PER_IMPORT = 20_000;
     private final JdbcTemplate jdbc;
@@ -347,12 +351,21 @@ public class PrivateDictionaryService {
         String rawDefinition,
         String rawTranslation
     ) {
-        String term = rawTerm.trim();
+        String term = promoteHeadwordToExpression(rawTerm, rawDefinition);
         String definition = rawDefinition.trim();
         String translation = rawTranslation.trim();
         if (term.length() < 2 || definition.isBlank() || translation.isBlank()) return;
         String key = normalize(term);
         entries.putIfAbsent(key, new ParsedEntry(term, definition, shortenTranslation(translation), detectPartOfSpeech(definition)));
+    }
+
+    private static String promoteHeadwordToExpression(String rawTerm, String rawDefinition) {
+        String headword = rawTerm.trim();
+        String expression = rawDefinition.trim().replaceAll("\\s+", " ");
+        if (!headword.contains(" ") && EXPRESSION_START.matcher(expression).matches()) {
+            return expression.replaceAll("\\s*\\([^)]*\\)", "").replaceAll("\\s+", " ").trim();
+        }
+        return headword;
     }
 
     private static int nextNonBlankLine(String[] lines, int start) {

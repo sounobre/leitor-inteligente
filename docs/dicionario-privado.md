@@ -29,6 +29,12 @@ break the ice — quebrar o gelo; iniciar uma conversa
 
 look after
 cuidar de; tomar conta de
+
+amends: make amends (to someone) (for something / for doing something)
+fazer algo para compensar, reparar um erro.
+Example sentence in English. / Exemplo de tradução em português.
 ```
+
+No terceiro formato, o texto antes dos dois-pontos é apenas o marcador alfabético do dicionário. O termo salvo para estudo é a expressão em inglês depois dos dois-pontos — por exemplo, `make amends` — sem as notas opcionais entre parênteses. O sentido completo e a tradução são preservados, enquanto a frase bilíngue original não é copiada para os cartões.
 
 EPUBs com uma estrutura muito visual, em colunas ou com cada definição fragmentada em diversos elementos podem exigir evolução do normalizador. As linhas que não forem reconhecidas são informadas no resultado da importação.

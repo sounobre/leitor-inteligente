@@ -44,9 +44,23 @@ class PrivateDictionaryServiceTest {
             """);
 
         assertEquals(2, result.entries().size());
-        assertEquals("icing", result.entries().getFirst().term());
+        assertEquals("be the icing on the cake", result.entries().getFirst().term());
         assertEquals("be the icing on the cake", result.entries().getFirst().definition());
         assertEquals("ser um benefício ou bônus a mais.", result.entries().getFirst().translation());
-        assertEquals("item", result.entries().get(1).term());
+        assertEquals("be an item", result.entries().get(1).term());
+    }
+
+    @Test
+    void promotesTheAlphabeticalHeadwordToTheActualExpression() {
+        var result = PrivateDictionaryService.parseEntries("""
+            amends: make amends (to some­one) (for something / for doing something)
+            fazer algo para compensar, reparar um erro.
+            Maybe John is just trying to make amends for what he did to Susan in the past. / Talvez o John esteja apenas tentando compensar o que fez.
+            """);
+
+        assertEquals(1, result.entries().size());
+        assertEquals("make amends", result.entries().getFirst().term());
+        assertEquals("make amends (to some­one) (for something / for doing something)", result.entries().getFirst().definition());
+        assertEquals("fazer algo para compensar, reparar um erro.", result.entries().getFirst().translation());
     }
 }
