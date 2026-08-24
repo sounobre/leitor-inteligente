@@ -39,7 +39,7 @@ function Router() {
           <Route path={SPECIALISTS_ROUTE} component={SpecialistsPage} />
           <Route path={DICTIONARY_ROUTE} component={DictionaryPage} />
           <Route path="/public-dictionary" component={() => <PublicDictionaryPage />} />
-          <Route path={EN_PTBR_DICTIONARY_ROUTE} component={() => <PublicDictionaryPage endpoint="/api/public-dictionary-en-ptbr" title="Inglês para português do Brasil." eyebrow="DICIONÁRIO EN–PT-BR" />} />
+          <Route path={EN_PTBR_DICTIONARY_ROUTE} component={() => <PublicDictionaryPage endpoint="/api/public-dictionary-en-ptbr" importEndpoint="/api/public-dictionary-en-ptbr" title="Inglês para português do Brasil." eyebrow="DICIONÁRIO EN–PT-BR" />} />
           <Route path="/study/:bookId" component={StudyPage} />
           <Route path="/read/:bookId" component={ReaderPage} />
           <Route path="/settings" component={SettingsPage} />

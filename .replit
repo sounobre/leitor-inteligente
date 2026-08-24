@@ -29,7 +29,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd artifacts/api-server && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) mvn -q spring-boot:run -Dspring-boot.run.arguments=\"--server.port=8099 --dictionary.import.enabled=true --dictionary.import.url=https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl.gz --dictionary.import.version=kaikki-english-2026-08-20 --dictionary.import.en-ptbr.enabled=true --dictionary.import.en-ptbr.url=https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl.gz --dictionary.import.en-ptbr.version=kaikki-english-2026-08-20\""
+args = "cd artifacts/api-server && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) mvn -q spring-boot:run -Dspring-boot.run.arguments=\"--server.port=8099 --dictionary.import.enabled=true --dictionary.import.url=https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl.gz --dictionary.import.version=kaikki-english-2026-08-20\""
 
 [agent]
 stack = "PNPM_WORKSPACE"

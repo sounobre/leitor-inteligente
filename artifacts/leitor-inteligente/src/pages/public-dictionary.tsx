@@ -38,7 +38,7 @@ function useDebounce(value: string, delay: number) {
   return result;
 }
 
-export function PublicDictionaryPage({ endpoint = '/api/public-dictionary', title = 'Inglês, palavra por palavra.', eyebrow = 'DICIONÁRIO PÚBLICO' }: { endpoint?: string; title?: string; eyebrow?: string }) {
+export function PublicDictionaryPage({ endpoint = '/api/public-dictionary', importEndpoint = endpoint, title = 'Inglês, palavra por palavra.', eyebrow = 'DICIONÁRIO PÚBLICO' }: { endpoint?: string; importEndpoint?: string; title?: string; eyebrow?: string }) {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -62,9 +62,9 @@ export function PublicDictionaryPage({ endpoint = '/api/public-dictionary', titl
     enabled: Boolean(selectedId),
   });
   const importStatus = useQuery<ImportStatus>({
-    queryKey: ['public-dictionary', 'import-status'],
+    queryKey: [importEndpoint, 'import-status'],
     queryFn: async () => {
-      const response = await fetch('/api/public-dictionary/import/status');
+      const response = await fetch(`${importEndpoint}/import/status`);
       if (!response.ok) throw new Error('Não foi possível consultar o progresso.');
       return response.json();
     },
@@ -83,11 +83,11 @@ export function PublicDictionaryPage({ endpoint = '/api/public-dictionary', titl
     setImportState('starting');
     setImportMessage('');
     try {
-      const response = await fetch('/api/public-dictionary/import', { method: 'POST' });
+      const response = await fetch(`${importEndpoint}/import`, { method: 'POST' });
       const body = await response.json().catch(() => ({})) as { message?: string };
       if (!response.ok) throw new Error(body.message || 'Não foi possível iniciar a importação.');
       setImportMessage(body.message || 'Importação iniciada. Você pode continuar usando o dicionário.');
-      await queryClient.invalidateQueries({ queryKey: ['public-dictionary', 'import-status'] });
+      await queryClient.invalidateQueries({ queryKey: [importEndpoint, 'import-status'] });
     } catch (error) {
       setImportState('error');
       setImportMessage(error instanceof Error ? error.message : 'Não foi possível iniciar a importação.');
