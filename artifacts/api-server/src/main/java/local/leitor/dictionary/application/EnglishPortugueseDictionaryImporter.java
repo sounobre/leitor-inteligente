@@ -145,17 +145,16 @@ public class EnglishPortugueseDictionaryImporter {
         // ID before batching because PostgreSQL rejects updating the same row
         // twice in one INSERT ... ON CONFLICT statement.
         Map<String, Translation> uniqueRows = new LinkedHashMap<>();
-        rows.forEach(row -> uniqueRows.putIfAbsent(row.id(), row));
+        rows.forEach(row -> uniqueRows.putIfAbsent(
+            normalize(row.term()) + "\u0000" + row.translation() + "\u0000" + row.partOfSpeech(), row));
         List<Translation> deduplicated = new ArrayList<>(uniqueRows.values());
         transactions.executeWithoutResult(status -> {
             jdbc.batchUpdate("""
                 INSERT INTO english_portuguese_dictionary_entries
                   (id, source_id, term, normalized_term, translation, part_of_speech, dataset_version)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT DO UPDATE SET
-                  term=excluded.term, normalized_term=excluded.normalized_term,
-                  translation=excluded.translation, part_of_speech=excluded.part_of_speech,
-                  dataset_version=excluded.dataset_version
+                ON CONFLICT (source_id, normalized_term, translation, part_of_speech)
+                DO UPDATE SET term=excluded.term, dataset_version=excluded.dataset_version
                 """, deduplicated, deduplicated.size(), (statement, row) -> {
                     statement.setString(1, row.id());
                     statement.setString(2, SOURCE_ID);
