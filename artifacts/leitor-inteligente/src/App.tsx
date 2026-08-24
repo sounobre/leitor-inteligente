@@ -15,8 +15,6 @@ import { DictionaryPage } from '@/pages/dictionary';
 import { PublicDictionaryPage } from '@/pages/public-dictionary';
 import { ReaderPage } from '@/pages/reader';
 import { DICTIONARY_ROUTE, EN_PTBR_DICTIONARY_ROUTE, FANTASY_TRAIL_ROUTE, SPECIALISTS_ROUTE } from '@/routes';
-import { TEST_ROUTE } from '@/routes';
-import { TestPage } from '@/pages/test';
 import {
   Route,
   Switch,
@@ -42,7 +40,6 @@ function Router() {
           <Route path={DICTIONARY_ROUTE} component={DictionaryPage} />
           <Route path="/public-dictionary" component={() => <PublicDictionaryPage />} />
           <Route path={EN_PTBR_DICTIONARY_ROUTE} component={() => <PublicDictionaryPage endpoint="/api/public-dictionary-en-ptbr" importEndpoint="/api/public-dictionary-en-ptbr" title="Inglês para português do Brasil." eyebrow="DICIONÁRIO EN–PT-BR" />} />
-          <Route path={TEST_ROUTE} component={TestPage} />
           <Route path="/study/:bookId" component={StudyPage} />
           <Route path="/read/:bookId" component={ReaderPage} />
           <Route path="/settings" component={SettingsPage} />

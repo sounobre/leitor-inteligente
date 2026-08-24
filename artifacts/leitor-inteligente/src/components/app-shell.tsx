@@ -1,4 +1,4 @@
-import { BookMarked, BookOpen, Compass, Library, NotebookText, Search, Settings2, TestTube2 } from 'lucide-react';
+import { BookMarked, BookOpen, Compass, Library, NotebookText, Search, Settings2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useHealthCheck, getHealthCheckQueryKey } from '@workspace/api-client-react';
@@ -10,7 +10,6 @@ const navItems = [
   { href: '/dictionary', label: 'Dicionário', icon: NotebookText },
   { href: '/public-dictionary', label: 'Dicionário público', icon: Search },
   { href: '/dictionary-en-ptbr', label: 'Dicionário EN–PT-BR', icon: Search },
-  { href: '/test', label: 'Teste', icon: TestTube2 },
   { href: '/settings', label: 'Preferências', icon: Settings2 },
 ];
 
