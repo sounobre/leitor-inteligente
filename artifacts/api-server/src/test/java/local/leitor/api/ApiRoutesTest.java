@@ -19,8 +19,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import local.leitor.book.application.port.in.GetBookDetailUseCase;
 import local.leitor.book.application.port.in.ImportBookUseCase;
-import local.leitor.book.application.port.in.ListBooksUseCase;
-import local.leitor.book.application.port.in.DeleteBookUseCase;
+import local.leitor.book.application.service.BookApplicationService;
 import local.leitor.book.domain.model.Book;
 import local.leitor.book.domain.model.BookId;
 import local.leitor.book.domain.model.BookStatus;
@@ -43,16 +42,7 @@ class ApiRoutesTest {
     private MockMvc mvc;
 
     @MockBean
-    private ListBooksUseCase listBooksUseCase;
-
-    @MockBean
-    private ImportBookUseCase importBookUseCase;
-
-    @MockBean
-    private GetBookDetailUseCase getBookDetailUseCase;
-
-    @MockBean
-    private DeleteBookUseCase deleteBookUseCase;
+    private BookApplicationService bookApplicationService;
 
     @MockBean
     private GetDashboardUseCase getDashboardUseCase;
@@ -86,7 +76,7 @@ class ApiRoutesTest {
             Instant.parse("2026-08-20T18:00:00Z")
         );
 
-        given(listBooksUseCase.listBooks()).willReturn(List.of(book));
+        given(bookApplicationService.listBooks()).willReturn(List.of(book));
 
         mvc.perform(get("/api/books"))
             .andExpect(status().isOk())
@@ -107,7 +97,7 @@ class ApiRoutesTest {
         mvc.perform(delete("/api/books/book-1"))
             .andExpect(status().isNoContent());
 
-        verify(deleteBookUseCase).deleteBook(BookId.of("book-1"));
+        verify(bookApplicationService).deleteBook(BookId.of("book-1"));
     }
 
     @Test

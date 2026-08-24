@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import java.util.function.Consumer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Primary;
 import org.springframework.transaction.annotation.Transactional;
 import local.leitor.book.application.dto.ImportBookCommand;
 import local.leitor.book.application.dto.PreparationProgress;
@@ -30,6 +31,7 @@ import local.leitor.engine.domain.model.StudyPlan;
  * Application service orchestrating Book use cases.
  */
 @Service
+@Primary
 @Transactional(readOnly = true)
 public class BookApplicationService implements
     ImportBookUseCase,

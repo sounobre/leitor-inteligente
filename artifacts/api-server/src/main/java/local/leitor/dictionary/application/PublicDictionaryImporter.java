@@ -141,7 +141,7 @@ public class PublicDictionaryImporter {
         return "kaikki-english-2026-08-20";
     }
 
-    private InputStream open(URI url) throws Exception {
+    protected InputStream open(URI url) throws Exception {
         HttpRequest request = HttpRequest.newBuilder(url).timeout(Duration.ofMinutes(10)).GET().build();
         HttpResponse<InputStream> response = http.send(request, HttpResponse.BodyHandlers.ofInputStream());
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
@@ -315,10 +315,10 @@ public class PublicDictionaryImporter {
     }
     public record ImportStatus(String status, String version, long linesProcessed, long importedEntries,
                                Long totalLines, long skippedLines, String errorMessage) {}
-    private record Checkpoint(String datasetVersion, String sourceUrl, long lastLine, long skippedLines,
-                              Long totalLines, String status, String errorMessage) {}
-    private record RecordData(String id, String term, String partOfSpeech, List<String> senses,
-                              List<Form> forms, List<Sound> sounds) {}
+    record Checkpoint(String datasetVersion, String sourceUrl, long lastLine, long skippedLines,
+                      Long totalLines, String status, String errorMessage) {}
+    record RecordData(String id, String term, String partOfSpeech, List<String> senses,
+                      List<Form> forms, List<Sound> sounds) {}
     private record Form(String value, String tags) {}
     private record Sound(String ipa, String audioUrl) {}
 }

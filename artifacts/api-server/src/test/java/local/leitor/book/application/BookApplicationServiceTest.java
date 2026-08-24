@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import local.leitor.book.application.dto.ImportBookCommand;
+import local.leitor.book.application.VocabularyExtractor;
 import local.leitor.book.application.port.out.BookContentExtractorPort;
 import local.leitor.book.application.port.out.BookRepositoryPort;
 import local.leitor.book.application.service.BookApplicationService;
@@ -42,11 +43,14 @@ class BookApplicationServiceTest {
     @Mock
     private StudyPlanGeneratorPort studyPlanGenerator;
 
+    @Mock
+    private VocabularyExtractor vocabularyExtractor;
+
     private BookApplicationService service;
 
     @BeforeEach
     void setUp() {
-        service = new BookApplicationService(repository, extractorFactory, studyPlanGenerator);
+        service = new BookApplicationService(repository, extractorFactory, studyPlanGenerator, vocabularyExtractor);
     }
 
     @Test
