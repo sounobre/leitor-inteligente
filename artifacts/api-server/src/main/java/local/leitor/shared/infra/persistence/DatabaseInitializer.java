@@ -178,6 +178,20 @@ public class DatabaseInitializer {
     jdbc.execute("ALTER TABLE public_dictionary_import_checkpoints ADD COLUMN IF NOT EXISTS error_message TEXT");
     jdbc.execute("CREATE INDEX IF NOT EXISTS idx_public_dictionary_entries_term ON public_dictionary_entries (normalized_term)");
     jdbc.execute("CREATE INDEX IF NOT EXISTS idx_public_dictionary_entries_term_prefix ON public_dictionary_entries (term text_pattern_ops)");
+    jdbc.execute("""
+        CREATE TABLE IF NOT EXISTS english_portuguese_dictionary_entries (
+          id TEXT PRIMARY KEY,
+          source_id TEXT NOT NULL REFERENCES public_dictionary_sources(id) ON DELETE CASCADE,
+          term TEXT NOT NULL,
+          normalized_term TEXT NOT NULL,
+          translation TEXT NOT NULL,
+          part_of_speech TEXT NOT NULL DEFAULT '',
+          dataset_version TEXT NOT NULL DEFAULT '',
+          UNIQUE(source_id, normalized_term, translation, part_of_speech)
+        )
+        """);
+    jdbc.execute("CREATE INDEX IF NOT EXISTS idx_en_pt_entries_term ON english_portuguese_dictionary_entries (normalized_term)");
+    jdbc.execute("CREATE INDEX IF NOT EXISTS idx_en_pt_entries_translation ON english_portuguese_dictionary_entries (lower(translation))");
     // Older imports used the alphabetical headword (for example, "amends")
     // instead of the expression that follows it (for example, "make amends").
     // Repair only the recognizably English expression-shaped rows.

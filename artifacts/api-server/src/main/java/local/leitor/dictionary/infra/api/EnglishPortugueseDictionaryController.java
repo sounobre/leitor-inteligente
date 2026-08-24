@@ -29,11 +29,11 @@ public class EnglishPortugueseDictionaryController {
     @GetMapping
     public List<EntrySummary> search(@RequestParam(defaultValue = "") String query,
                                      @RequestParam(defaultValue = "40") int limit) {
-        return dictionary.search(query, limit);
+        return dictionary.searchEnglishPortuguese(query, limit);
     }
 
     @GetMapping("/{entryId}")
     public EntryDetail getEntry(@PathVariable String entryId) {
-        return dictionary.getEntry(entryId);
+        return dictionary.getEnglishPortugueseEntry(entryId);
     }
 }
