@@ -16,6 +16,10 @@ export interface Book {
   status: BookStatus;
   level: string;
   progress: number;
+  /** Last chapter opened */
+  readingChapter: number;
+  /** Last offset in words */
+  readingOffset: number;
   coverColor: string;
   updatedAt: string;
 }

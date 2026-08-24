@@ -10,6 +10,8 @@ public record BookResponse(
     String status,
     String level,
     int progress,
+    int readingChapter,
+    int readingOffset,
     String coverColor,
     String updatedAt
 ) {
@@ -21,7 +23,7 @@ public record BookResponse(
             book.getSourceType().name(),
             book.getStatus().name(),
             book.getLevel().name(),
-            book.getProgress(),
+            book.getProgress(), book.getReadingChapter(), book.getReadingOffset(),
             book.getCoverColor(),
             book.getUpdatedAt().toString()
         );

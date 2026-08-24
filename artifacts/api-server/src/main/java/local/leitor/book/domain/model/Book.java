@@ -22,6 +22,8 @@ public class Book {
     private BookStatus status;
     private CefrLevel level;
     private int progress;
+    private int readingChapter;
+    private int readingOffset;
     private String coverColor;
     private String content;
     private StudyPlan plan;
@@ -49,6 +51,8 @@ public class Book {
         this.status = status != null ? status : BookStatus.READY;
         this.level = level != null ? level : CefrLevel.B2;
         this.progress = validateProgress(progress);
+        this.readingChapter = 1;
+        this.readingOffset = 0;
         this.coverColor = coverColor == null || coverColor.isBlank() ? DEFAULT_COVER_COLOR : coverColor.trim();
         this.content = content != null ? content : "";
         this.plan = plan != null ? plan : StudyPlan.empty();
@@ -117,7 +121,27 @@ public class Book {
         );
     }
 
+    public static Book reconstitute(
+        BookId id, String title, String author, SourceType sourceType, BookStatus status,
+        CefrLevel level, int progress, int readingChapter, int readingOffset,
+        String coverColor, String content, StudyPlan plan, List<Chapter> chapters, Instant updatedAt
+    ) {
+        Book book = reconstitute(id, title, author, sourceType, status, level, progress, coverColor, content, plan, chapters, updatedAt);
+        book.readingChapter = Math.max(1, readingChapter);
+        book.readingOffset = Math.max(0, readingOffset);
+        return book;
+    }
+
     public void updateProgress(int newProgress) {
+        this.progress = validateProgress(newProgress);
+        this.updatedAt = Instant.now();
+    }
+
+    public void updateReadingPosition(int chapter, int offset, int newProgress) {
+        if (chapter < 1) throw new BusinessValidationException("Reading chapter must be 1 or greater");
+        if (offset < 0) throw new BusinessValidationException("Reading offset cannot be negative");
+        this.readingChapter = chapter;
+        this.readingOffset = offset;
         this.progress = validateProgress(newProgress);
         this.updatedAt = Instant.now();
     }
@@ -177,6 +201,9 @@ public class Book {
     public int getProgress() {
         return progress;
     }
+
+    public int getReadingChapter() { return readingChapter; }
+    public int getReadingOffset() { return readingOffset; }
 
     public String getCoverColor() {
         return coverColor;

@@ -42,6 +42,10 @@ export interface Book {
   status: BookStatus;
   level: string;
   progress: number;
+  /** Last chapter opened */
+  readingChapter: number;
+  /** Last offset in words */
+  readingOffset: number;
   coverColor: string;
   updatedAt: string;
 }
@@ -111,6 +115,18 @@ export type BookDetail = Book & {
   plan: StudyPlan;
   chapters: Chapter[];
 };
+
+export interface ReadingPositionRequest {
+  /** @minimum 1 */
+  chapter: number;
+  /** @minimum 0 */
+  offset: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  progress: number;
+}
 
 export type ImportBookRequestSourceType = typeof ImportBookRequestSourceType[keyof typeof ImportBookRequestSourceType];
 
@@ -225,6 +241,48 @@ export interface DictionaryEntryDetail {
   cards: DictionaryStudyCard[];
 }
 
+export interface PublicDictionaryEntrySummary {
+  id: string;
+  term: string;
+  partOfSpeech: string;
+  senseCount: number;
+}
+
+export interface PublicDictionarySense {
+  id: string;
+  definition: string;
+  position: number;
+}
+
+export interface PublicDictionaryForm {
+  id: string;
+  form: string;
+  tags: string;
+}
+
+export interface PublicDictionarySound {
+  id: string;
+  ipa: string;
+  audioUrl: string;
+}
+
+export interface PublicDictionarySource {
+  name: string;
+  version: string;
+  license: string;
+  attribution: string;
+}
+
+export interface PublicDictionaryEntryDetail {
+  id: string;
+  term: string;
+  partOfSpeech: string;
+  senses: PublicDictionarySense[];
+  forms: PublicDictionaryForm[];
+  sounds: PublicDictionarySound[];
+  source: PublicDictionarySource;
+}
+
 export type DictionaryExampleRequestProvider = typeof DictionaryExampleRequestProvider[keyof typeof DictionaryExampleRequestProvider];
 
 
@@ -265,5 +323,15 @@ endpoint?: string;
 
 export type SearchDictionaryEntriesParams = {
 query?: string;
+};
+
+export type SearchPublicDictionaryParams = {
+query?: string;
+/**
+ * Maximum results
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
 };
 

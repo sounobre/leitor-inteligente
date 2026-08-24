@@ -1,0 +1,141 @@
+souno@DESKTOP-MS3MNIJ MINGW64 ~/leitor-inteligente/leitor-inteligente/artifacts/api-server (main)
+$ mvn spring-boot:run
+[INFO] Scanning for projects...
+[INFO]
+[INFO] ----------------------< local.leitor:api-server >-----------------------
+[INFO] Building leitor-inteligente-api 0.0.1-SNAPSHOT
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] >>> spring-boot-maven-plugin:3.4.4:run (default-cli) > test-compile @ api-server >>>
+[INFO]
+[INFO] --- maven-resources-plugin:3.3.1:resources (default-resources) @ api-server ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO]
+[INFO] --- maven-compiler-plugin:3.13.0:compile (default-compile) @ api-server ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 69 source files with javac [debug parameters release 21] to target\classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR :
+[INFO] -------------------------------------------------------------
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[24,38] cannot find symbol
+  symbol:   class VocabularyWord
+  location: package local.leitor.book.domain.model
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[25,37] cannot find symbol
+  symbol:   class VocabularyExtractor
+  location: package local.leitor.book.application
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[46,19] cannot find symbol
+  symbol:   class VocabularyExtractor
+  location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[53,9] cannot find symbol
+  symbol:   class VocabularyExtractor
+  location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[163,17] cannot find symbol
+  symbol:   class VocabularyWord
+  location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[30,39] cannot find symbol
+  symbol:   class ReadingPositionRequest
+  location: package local.leitor.book.infra.api.dto
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[31,39] cannot find symbol
+  symbol:   class VocabularyCardsRequest
+  location: package local.leitor.book.infra.api.dto
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[32,38] cannot find symbol
+  symbol:   class VocabularyWord
+  location: package local.leitor.book.domain.model
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[112,89] cannot find symbol
+  symbol:   class ReadingPositionRequest
+  location: class local.leitor.book.infra.api.BookController
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[134,17] cannot find symbol
+  symbol:   class VocabularyWord
+  location: class local.leitor.book.infra.api.BookController
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[143,69] cannot find symbol
+  symbol:   class VocabularyCardsRequest
+  location: class local.leitor.book.infra.api.BookController
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[66,68] cannot find symbol
+  symbol:   class VocabularyExtractor
+  location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[147,26] cannot find symbol
+  symbol:   method updateReadingPosition(local.leitor.book.domain.model.BookId,int,int,int,clientUpda[...]tedAt)
+  location: variable repository of type local.leitor.book.application.port.out.BookRepositoryPort
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[164,14] cannot find symbol
+  symbol:   class VocabularyWord
+  location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[164,48] cannot find symbol
+  symbol:   method findVocabulary(local.leitor.book.domain.model.BookId,java.lang.String,int,int)
+  location: variable repository of type local.leitor.book.application.port.out.BookRepositoryPort
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[167,18] cannot find symbol
+  symbol:   class VocabularyWord
+  location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[178,26] cannot find symbol
+  symbol:   method createVocabularyCards(local.leitor.book.domain.model.BookId,java.util.List<java.lang.String>)
+  location: variable repository of type local.leitor.book.application.port.out.BookRepositoryPort
+[INFO] 17 errors
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.675 s
+[INFO] Finished at: 2026-08-24T14:04:33-03:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project api-server: Compilation failure: Compilation failure:
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[24,38] cannot find symbol
+[ERROR]   symbol:   class VocabularyWord
+[ERROR]   location: package local.leitor.book.domain.model
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[25,37] cannot find symbol
+[ERROR]   symbol:   class VocabularyExtractor
+[ERROR]   location: package local.leitor.book.application
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[46,19] cannot find symbol
+[ERROR]   symbol:   class VocabularyExtractor
+[ERROR]   location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[53,9] cannot find symbol
+[ERROR]   symbol:   class VocabularyExtractor
+[ERROR]   location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[163,17] cannot find symbol
+[ERROR]   symbol:   class VocabularyWord
+[ERROR]   location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[30,39] cannot find symbol
+[ERROR]   symbol:   class ReadingPositionRequest
+[ERROR]   location: package local.leitor.book.infra.api.dto
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[31,39] cannot find symbol
+[ERROR]   symbol:   class VocabularyCardsRequest
+[ERROR]   location: package local.leitor.book.infra.api.dto
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[32,38] cannot find symbol
+[ERROR]   symbol:   class VocabularyWord
+[ERROR]   location: package local.leitor.book.domain.model
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[112,89] cannot find symbol
+[ERROR]   symbol:   class ReadingPositionRequest
+[ERROR]   location: class local.leitor.book.infra.api.BookController
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[134,17] cannot find symbol
+[ERROR]   symbol:   class VocabularyWord
+[ERROR]   location: class local.leitor.book.infra.api.BookController
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/infra/api/BookController.java:[143,69] cannot find symbol
+[ERROR]   symbol:   class VocabularyCardsRequest
+[ERROR]   location: class local.leitor.book.infra.api.BookController
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[66,68] cannot find symbol
+[ERROR]   symbol:   class VocabularyExtractor
+[ERROR]   location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[147,26] cannot find symbol
+[ERROR]   symbol:   method updateReadingPosition(local.leitor.book.domain.model.BookId,int,int,int,clientUpda[...]tedAt)
+[ERROR]   location: variable repository of type local.leitor.book.application.port.out.BookRepositoryPort
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[164,14] cannot find symbol
+[ERROR]   symbol:   class VocabularyWord
+[ERROR]   location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[164,48] cannot find symbol
+[ERROR]   symbol:   method findVocabulary(local.leitor.book.domain.model.BookId,java.lang.String,int,int)
+[ERROR]   location: variable repository of type local.leitor.book.application.port.out.BookRepositoryPort
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[167,18] cannot find symbol
+[ERROR]   symbol:   class VocabularyWord
+[ERROR]   location: class local.leitor.book.application.service.BookApplicationService
+[ERROR] /C:/Users/souno/leitor-inteligente/leitor-inteligente/artifacts/api-server/src/main/java/local/leitor/book/application/service/BookApplicationService.java:[178,26] cannot find symbol
+[ERROR]   symbol:   method createVocabularyCards(local.leitor.book.domain.model.BookId,java.util.List<java.lang.String>)
+[ERROR]   location: variable repository of type local.leitor.book.application.port.out.BookRepositoryPort
+[ERROR] -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+
+souno@DESKTOP-MS3MNIJ MINGW64 ~/leitor-inteligente/leitor-inteligente/artifacts/api-server (main)
+$

@@ -22,7 +22,12 @@ export default function TabOneScreen() {
 
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={[styles.container, { paddingTop: topPadding, paddingBottom: 36 }]} showsVerticalScrollIndicator={false}>
-      <Text style={[styles.eyebrow, { color: colors.primary }]}>SEU RITUAL DE LEITURA</Text>
+      <View style={styles.homeTopline}>
+        <Text style={[styles.eyebrow, { color: colors.primary }]}>SEU RITUAL DE LEITURA</Text>
+        <Pressable onPress={() => router.push('/settings' as never)} hitSlop={12} accessibilityLabel="Abrir configurações de estudo" style={[styles.settingsButton, { borderColor: colors.border }]}>
+          <Feather name="settings" size={18} color={colors.foreground} />
+        </Pressable>
+      </View>
       <Text style={[styles.greeting, { color: colors.foreground }]}>Boa noite.{'\n'}Vamos abrir espaço{'\n'}para o inglês.</Text>
 
       <View style={[styles.hero, { backgroundColor: colors.primary }]}>
@@ -57,6 +62,8 @@ function Metric({ label, value, color, colors }: { label: string; value: string;
 const styles = StyleSheet.create({
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   container: { paddingHorizontal: 20, gap: 16 },
+  homeTopline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  settingsButton: { width: 38, height: 38, borderWidth: 1, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   eyebrow: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1.5 },
   greeting: { fontFamily: 'Inter_700Bold', fontSize: 32, lineHeight: 35, letterSpacing: -1.3, marginBottom: 9 },
   hero: { borderRadius: 26, padding: 22, gap: 23, overflow: 'hidden' },

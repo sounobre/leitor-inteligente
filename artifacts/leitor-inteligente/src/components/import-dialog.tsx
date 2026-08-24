@@ -4,7 +4,7 @@ import { FileText, Globe2, LoaderCircle, Upload, X } from 'lucide-react';
 import { getListBooksQueryKey, getGetDashboardQueryKey } from '@workspace/api-client-react';
 import type { ImportBookRequest, Book } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { defaults } from '@/pages/settings';
+import { getSettings } from '@/pages/settings';
 
 type SourceType = 'EPUB' | 'ARTICLE';
 
@@ -45,8 +45,7 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
       return;
     }
     setError('');
-    const stored = window.localStorage.getItem('leitor-inteligente-settings');
-    const settings = stored ? { ...defaults, ...JSON.parse(stored) } : defaults;
+    const settings = getSettings();
     if (!settings.endpoint.trim() || !settings.model.trim()) { setError('Define o provedor e o modelo em Preferências.'); return; }
     const providerName = settings.provider === 'openrouter' ? 'OpenRouter' : 'Ollama';
     setStage(sourceType === 'EPUB' ? `A enviar para ${providerName} e preparar…` : `A preparar com ${providerName}…`);

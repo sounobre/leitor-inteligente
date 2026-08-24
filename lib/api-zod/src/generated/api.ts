@@ -58,6 +58,8 @@ export const ListBooksResponseItem = zod.object({
   "status": zod.enum(['READY', 'PROCESSING', 'DRAFT']),
   "level": zod.string(),
   "progress": zod.number(),
+  "readingChapter": zod.number().describe('Last chapter opened'),
+  "readingOffset": zod.number().describe('Last offset in words'),
   "coverColor": zod.string(),
   "updatedAt": zod.string()
 })
@@ -86,6 +88,8 @@ export const ImportBookResponse = zod.object({
   "status": zod.enum(['READY', 'PROCESSING', 'DRAFT']),
   "level": zod.string(),
   "progress": zod.number(),
+  "readingChapter": zod.number().describe('Last chapter opened'),
+  "readingOffset": zod.number().describe('Last offset in words'),
   "coverColor": zod.string(),
   "updatedAt": zod.string()
 })
@@ -106,6 +110,8 @@ export const GetBookResponse = zod.object({
   "status": zod.enum(['READY', 'PROCESSING', 'DRAFT']),
   "level": zod.string(),
   "progress": zod.number(),
+  "readingChapter": zod.number().describe('Last chapter opened'),
+  "readingOffset": zod.number().describe('Last offset in words'),
   "coverColor": zod.string(),
   "updatedAt": zod.string()
 }).and(zod.object({
@@ -176,6 +182,42 @@ export const GetBookResponse = zod.object({
 
 
 /**
+ * @summary Save the current reading position
+ */
+export const UpdateReadingPositionParams = zod.object({
+  "bookId": zod.coerce.string()
+})
+
+
+export const updateReadingPositionBodyOffsetMin = 0;
+
+export const updateReadingPositionBodyProgressMin = 0;
+export const updateReadingPositionBodyProgressMax = 100;
+
+
+
+export const UpdateReadingPositionBody = zod.object({
+  "chapter": zod.number().min(1),
+  "offset": zod.number().min(updateReadingPositionBodyOffsetMin),
+  "progress": zod.number().min(updateReadingPositionBodyProgressMin).max(updateReadingPositionBodyProgressMax)
+})
+
+export const UpdateReadingPositionResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "author": zod.string(),
+  "sourceType": zod.enum(['EPUB', 'ARTICLE']),
+  "status": zod.enum(['READY', 'PROCESSING', 'DRAFT']),
+  "level": zod.string(),
+  "progress": zod.number(),
+  "readingChapter": zod.number().describe('Last chapter opened'),
+  "readingOffset": zod.number().describe('Last offset in words'),
+  "coverColor": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
  * @summary Get study dashboard summary
  */
 export const GetDashboardResponse = zod.object({
@@ -190,6 +232,8 @@ export const GetDashboardResponse = zod.object({
   "status": zod.enum(['READY', 'PROCESSING', 'DRAFT']),
   "level": zod.string(),
   "progress": zod.number(),
+  "readingChapter": zod.number().describe('Last chapter opened'),
+  "readingOffset": zod.number().describe('Last offset in words'),
   "coverColor": zod.string(),
   "updatedAt": zod.string()
 })
@@ -214,6 +258,63 @@ export const SearchDictionaryEntriesResponseItem = zod.object({
   "exampleCount": zod.number()
 })
 export const SearchDictionaryEntriesResponse = zod.array(SearchDictionaryEntriesResponseItem)
+
+
+/**
+ * @summary Search the imported open English dictionary
+ */
+export const searchPublicDictionaryQueryLimitDefault = 40;
+export const searchPublicDictionaryQueryLimitMax = 100;
+
+
+
+export const SearchPublicDictionaryQueryParams = zod.object({
+  "query": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().min(1).max(searchPublicDictionaryQueryLimitMax).default(searchPublicDictionaryQueryLimitDefault)
+})
+
+export const SearchPublicDictionaryResponseItem = zod.object({
+  "id": zod.string(),
+  "term": zod.string(),
+  "partOfSpeech": zod.string(),
+  "senseCount": zod.number()
+})
+export const SearchPublicDictionaryResponse = zod.array(SearchPublicDictionaryResponseItem)
+
+
+/**
+ * @summary Get an entry from the imported open dictionary
+ */
+export const GetPublicDictionaryEntryParams = zod.object({
+  "entryId": zod.coerce.string()
+})
+
+export const GetPublicDictionaryEntryResponse = zod.object({
+  "id": zod.string(),
+  "term": zod.string(),
+  "partOfSpeech": zod.string(),
+  "senses": zod.array(zod.object({
+  "id": zod.string(),
+  "definition": zod.string(),
+  "position": zod.number()
+})),
+  "forms": zod.array(zod.object({
+  "id": zod.string(),
+  "form": zod.string(),
+  "tags": zod.string()
+})),
+  "sounds": zod.array(zod.object({
+  "id": zod.string(),
+  "ipa": zod.string(),
+  "audioUrl": zod.string()
+})),
+  "source": zod.object({
+  "name": zod.string(),
+  "version": zod.string(),
+  "license": zod.string(),
+  "attribution": zod.string()
+})
+})
 
 
 /**

@@ -2,6 +2,8 @@ package local.leitor.study.infra.api.dto;
 
 import local.leitor.book.domain.model.Book;
 import local.leitor.engine.domain.model.StudyPlan;
+import local.leitor.book.infra.api.dto.ChapterResponse;
+import java.util.List;
 
 public record PreparedBookResponse(
     String id,
@@ -13,7 +15,10 @@ public record PreparedBookResponse(
     int progress,
     String coverColor,
     String updatedAt,
-    StudyPlan plan
+    StudyPlan plan,
+    int readingChapter,
+    int readingOffset,
+    List<ChapterResponse> chapters
 ) {
     public static PreparedBookResponse fromDomain(Book book) {
         return new PreparedBookResponse(
@@ -26,7 +31,10 @@ public record PreparedBookResponse(
             book.getProgress(),
             book.getCoverColor(),
             book.getUpdatedAt().toString(),
-            book.getPlan()
+            book.getPlan(),
+            book.getReadingChapter(),
+            book.getReadingOffset(),
+            book.getChapters().stream().map(ChapterResponse::fromDomain).toList()
         );
     }
 }

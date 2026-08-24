@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, Book, Plus, LoaderCircle, Sparkles, Library as LibraryIcon } from 'lucide-react';
 import { DictionaryImportDialog } from '@/components/dictionary-import-dialog';
-import { defaults } from '@/pages/settings';
-import type { Preferences } from '@/pages/settings';
+import { getSettings } from '@/pages/settings';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -13,12 +12,6 @@ function useDebounce<T>(value: T, delay: number): T {
   }, [value, delay]);
   return debouncedValue;
 }
-
-const getSettings = (): Preferences => {
-  if (typeof window === 'undefined') return defaults;
-  const stored = window.localStorage.getItem('leitor-inteligente-settings');
-  return stored ? { ...defaults, ...JSON.parse(stored) } : defaults;
-};
 
 type SearchResult = {
   id: string;

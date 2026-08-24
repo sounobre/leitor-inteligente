@@ -24,6 +24,10 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerBackTitle: 'Back' }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="card/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="reader/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="reader/local/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="settings" options={{ title: 'Configurações de estudo' }} />
     </Stack>
   );
 }

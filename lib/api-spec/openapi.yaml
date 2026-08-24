@@ -112,6 +112,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BookDetail"
+  /books/{bookId}/reading-position:
+    post:
+      operationId: updateReadingPosition
+      tags: [library]
+      summary: Save the current reading position
+      parameters:
+        - $ref: "#/components/parameters/BookId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReadingPositionRequest" }
+      responses:
+        "200":
+          description: Updated book
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Book" }
   /dashboard:
     get:
       operationId: getDashboard
@@ -142,6 +160,41 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/DictionaryEntrySummary" }
+  /public-dictionary:
+    get:
+      operationId: searchPublicDictionary
+      tags: [study]
+      summary: Search the imported open English dictionary
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: number, minimum: 1, maximum: 100, default: 40, description: Maximum results }
+      responses:
+        "200":
+          description: Matching public dictionary entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PublicDictionaryEntrySummary" }
+  /public-dictionary/{entryId}:
+    get:
+      operationId: getPublicDictionaryEntry
+      tags: [study]
+      summary: Get an entry from the imported open dictionary
+      parameters:
+        - $ref: "#/components/parameters/DictionaryEntryId"
+      responses:
+        "200":
+          description: Public dictionary entry with senses, forms, pronunciation and attribution
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicDictionaryEntryDetail" }
   /dictionaries/import:
     post:
       operationId: importPrivateDictionary
@@ -255,9 +308,11 @@ components:
         status: { type: string, enum: [READY, PROCESSING, DRAFT] }
         level: { type: string }
         progress: { type: number }
+        readingChapter: { type: number, description: Last chapter opened, integer: true }
+        readingOffset: { type: number, description: Last offset in words, integer: true }
         coverColor: { type: string }
         updatedAt: { type: string }
-      required: [id, title, author, sourceType, status, level, progress, coverColor, updatedAt]
+      required: [id, title, author, sourceType, status, level, progress, readingChapter, readingOffset, coverColor, updatedAt]
     BookDetail:
       allOf:
         - $ref: "#/components/schemas/Book"
@@ -279,6 +334,13 @@ components:
         content: { type: string }
         wordCount: { type: number, description: Number of words in the chapter, integer: true }
       required: [id, position, title, content, wordCount]
+    ReadingPositionRequest:
+      type: object
+      properties:
+        chapter: { type: number, minimum: 1, integer: true }
+        offset: { type: number, minimum: 0, integer: true }
+        progress: { type: number, minimum: 0, maximum: 100, integer: true }
+      required: [chapter, offset, progress]
     StudyPlan:
       type: object
       properties:
@@ -472,6 +534,60 @@ components:
           type: array
           items: { $ref: "#/components/schemas/DictionaryStudyCard" }
       required: [id, headword, term, translation, partOfSpeech, usageLabels, source, senses, examples, cards]
+    PublicDictionaryEntrySummary:
+      type: object
+      properties:
+        id: { type: string }
+        term: { type: string }
+        partOfSpeech: { type: string }
+        senseCount: { type: number, integer: true }
+      required: [id, term, partOfSpeech, senseCount]
+    PublicDictionarySense:
+      type: object
+      properties:
+        id: { type: string }
+        definition: { type: string }
+        position: { type: number, integer: true }
+      required: [id, definition, position]
+    PublicDictionaryForm:
+      type: object
+      properties:
+        id: { type: string }
+        form: { type: string }
+        tags: { type: string }
+      required: [id, form, tags]
+    PublicDictionarySound:
+      type: object
+      properties:
+        id: { type: string }
+        ipa: { type: string }
+        audioUrl: { type: string }
+      required: [id, ipa, audioUrl]
+    PublicDictionarySource:
+      type: object
+      properties:
+        name: { type: string }
+        version: { type: string }
+        license: { type: string }
+        attribution: { type: string }
+      required: [name, version, license, attribution]
+    PublicDictionaryEntryDetail:
+      type: object
+      properties:
+        id: { type: string }
+        term: { type: string }
+        partOfSpeech: { type: string }
+        senses:
+          type: array
+          items: { $ref: "#/components/schemas/PublicDictionarySense" }
+        forms:
+          type: array
+          items: { $ref: "#/components/schemas/PublicDictionaryForm" }
+        sounds:
+          type: array
+          items: { $ref: "#/components/schemas/PublicDictionarySound" }
+        source: { $ref: "#/components/schemas/PublicDictionarySource" }
+      required: [id, term, partOfSpeech, senses, forms, sounds, source]
     DictionaryExampleRequest:
       type: object
       properties:

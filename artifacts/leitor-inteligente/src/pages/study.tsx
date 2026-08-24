@@ -3,6 +3,8 @@ import { useMemo, useState, useEffect } from 'react';
 import { Link, useParams } from 'wouter';
 import { getGetBookQueryKey, useGetBook } from '@workspace/api-client-react';
 import type { StudyItem, VisualStudyCard, SemanticMap } from '@workspace/api-client-react';
+import { defaults, storageKey } from '@/pages/settings';
+import type { Preferences } from '@/pages/settings';
 
 const intros: Record<string, string> = {
   visualCards: 'Imagens mentais e técnicas para ancorar vocabulário de forma duradoura. Sem spoilers, apenas associações limpas.',
@@ -12,6 +14,30 @@ const intros: Record<string, string> = {
   idioms: 'Expressões que não se traduzem palavra por palavra. Guarda a intenção, não apenas o significado.',
   phrasalVerbs: 'Pequenos verbos com movimento. São o pulso do inglês do dia a dia.',
 };
+
+export function getSettings(storage: Pick<Storage, 'getItem'> = window.localStorage): Preferences {
+  const stored = storage.getItem(storageKey);
+  if (!stored) return defaults;
+
+  try {
+    const parsed = JSON.parse(stored) as Partial<Preferences>;
+    const speechAccent = parsed.speechAccent === 'en-GB' ? 'en-GB' : 'en-US';
+    return { ...defaults, ...parsed, speechAccent };
+  } catch {
+    return defaults;
+  }
+}
+
+export function pronounceTerm(
+  term: string,
+  storage: Pick<Storage, 'getItem'> = window.localStorage,
+  speechSynthesis: Pick<SpeechSynthesis, 'cancel' | 'speak'> = window.speechSynthesis,
+) {
+  const utterance = new SpeechSynthesisUtterance(term);
+  utterance.lang = getSettings(storage).speechAccent;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
+}
 
 function StudyItemCard({ item, isReviewed, toggleReview, pronounce, showExample = false }: {
   item: StudyItem | VisualStudyCard;
@@ -192,7 +218,11 @@ export function StudyPage() {
   }, [tab, plan, openDeck]);
 
   const toggleReview = (term: string) => setReviewed((items) => items.includes(term) ? items.filter((item) => item !== term) : [...items, term]);
-  const pronounce = (term: string) => { if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance(term)); };
+  const pronounce = (term: string) => {
+    if ('speechSynthesis' in window) {
+      pronounceTerm(term);
+    }
+  };
 
   const { activeItems, totalReviewable } = useMemo(() => {
     if (tab === 'visualCards') return { activeItems: plan?.visualCards || [], totalReviewable: plan?.visualCards?.length || 0 };

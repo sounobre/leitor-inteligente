@@ -132,4 +132,18 @@ class PrivateDictionaryServiceTest {
         assertEquals(List.of("gír", "vt+vi"), result.entries().getFirst().usageLabels());
         assertEquals("parar de funcionar, falhar; desmontar.", result.entries().getFirst().translation());
     }
+
+    @Test
+    void doesNotTreatAnIsbnAsASenseNumber() {
+        var result = PrivateDictionaryService.parseEntries("""
+            back: be on someone’s back
+            inf
+            criticar ou importunar alguém constantemente.
+            9788506080481
+            """);
+
+        assertEquals(1, result.entries().size());
+        assertEquals(1, result.entries().getFirst().senses().size());
+        assertEquals("criticar ou importunar alguém constantemente.", result.entries().getFirst().translation());
+    }
 }

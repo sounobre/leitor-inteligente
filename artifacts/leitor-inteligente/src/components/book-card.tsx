@@ -7,7 +7,7 @@ export function BookCard({ book, onDelete }: { book: BookShape; onDelete?: (book
   const statusLabel = book.status === 'PROCESSING' ? 'A preparar' : book.status === 'DRAFT' ? 'Rascunho' : `${book.progress}% lido`;
   return (
     <div className="book-card fade-up" data-testid={`card-book-${book.id}`}>
-      <Link href={`/study/${book.id}`} className="book-card-link">
+        <Link href={`/read/${book.id}`} className="book-card-link">
         <div className="book-cover" style={{ background: book.coverColor || '#5064f5' }}>
           <span className="badge">{book.sourceType === 'ARTICLE' ? 'ARTIGO' : 'EPUB'}</span>
           <span className="cover-title">{book.title}</span>

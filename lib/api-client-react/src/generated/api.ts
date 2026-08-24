@@ -36,7 +36,11 @@ import type {
   ListOllamaModelsParams,
   ListOpenRouterModelsParams,
   OllamaModelCatalog,
-  SearchDictionaryEntriesParams
+  PublicDictionaryEntryDetail,
+  PublicDictionaryEntrySummary,
+  ReadingPositionRequest,
+  SearchDictionaryEntriesParams,
+  SearchPublicDictionaryParams
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -537,6 +541,78 @@ export function useGetBook<TData = Awaited<ReturnType<typeof getBook>>, TError =
 
 
 
+export const getUpdateReadingPositionUrl = (bookId: string,) => {
+
+
+
+
+  return `/api/books/${bookId}/reading-position`
+}
+
+/**
+ * @summary Save the current reading position
+ */
+export const updateReadingPosition = async (bookId: string,
+    readingPositionRequest: ReadingPositionRequest, options?: Parameters<typeof customFetch>[1]): Promise<Book> => {
+
+  return customFetch<Book>(getUpdateReadingPositionUrl(bookId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(readingPositionRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdateReadingPositionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReadingPosition>>, TError,{bookId: string;data: BodyType<ReadingPositionRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateReadingPosition>>, TError,{bookId: string;data: BodyType<ReadingPositionRequest>}, TContext> => {
+
+const mutationKey = ['updateReadingPosition'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateReadingPosition>>, {bookId: string;data: BodyType<ReadingPositionRequest>}> = (props) => {
+          const {bookId,data} = props ?? {};
+
+          return  updateReadingPosition(bookId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateReadingPositionMutationResult = NonNullable<Awaited<ReturnType<typeof updateReadingPosition>>>
+    export type UpdateReadingPositionMutationBody = BodyType<ReadingPositionRequest>
+    export type UpdateReadingPositionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Save the current reading position
+ */
+export const useUpdateReadingPosition = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReadingPosition>>, TError,{bookId: string;data: BodyType<ReadingPositionRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateReadingPosition>>,
+        TError,
+        {bookId: string;data: BodyType<ReadingPositionRequest>},
+        TContext
+      > => {
+      return useMutation(getUpdateReadingPositionMutationOptions(options));
+    }
+
 export const getGetDashboardUrl = () => {
 
 
@@ -686,6 +762,167 @@ export function useSearchDictionaryEntries<TData = Awaited<ReturnType<typeof sea
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getSearchDictionaryEntriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSearchPublicDictionaryUrl = (params?: SearchPublicDictionaryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/public-dictionary?${stringifiedParams}` : `/api/public-dictionary`
+}
+
+/**
+ * @summary Search the imported open English dictionary
+ */
+export const searchPublicDictionary = async (params?: SearchPublicDictionaryParams, options?: Parameters<typeof customFetch>[1]): Promise<PublicDictionaryEntrySummary[]> => {
+
+  return customFetch<PublicDictionaryEntrySummary[]>(getSearchPublicDictionaryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchPublicDictionaryQueryKey = (params?: SearchPublicDictionaryParams,) => {
+    return [
+    `/api/public-dictionary`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchPublicDictionaryQueryOptions = <TData = Awaited<ReturnType<typeof searchPublicDictionary>>, TError = ErrorType<unknown>>(params?: SearchPublicDictionaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchPublicDictionary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchPublicDictionaryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchPublicDictionary>>> = ({ signal }) => searchPublicDictionary(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchPublicDictionary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchPublicDictionaryQueryResult = NonNullable<Awaited<ReturnType<typeof searchPublicDictionary>>>
+export type SearchPublicDictionaryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search the imported open English dictionary
+ */
+
+export function useSearchPublicDictionary<TData = Awaited<ReturnType<typeof searchPublicDictionary>>, TError = ErrorType<unknown>>(
+ params?: SearchPublicDictionaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchPublicDictionary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchPublicDictionaryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicDictionaryEntryUrl = (entryId: string,) => {
+
+
+
+
+  return `/api/public-dictionary/${entryId}`
+}
+
+/**
+ * @summary Get an entry from the imported open dictionary
+ */
+export const getPublicDictionaryEntry = async (entryId: string, options?: Parameters<typeof customFetch>[1]): Promise<PublicDictionaryEntryDetail> => {
+
+  return customFetch<PublicDictionaryEntryDetail>(getGetPublicDictionaryEntryUrl(entryId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicDictionaryEntryQueryKey = (entryId: string,) => {
+    return [
+    `/api/public-dictionary/${entryId}`
+    ] as const;
+    }
+
+
+export const getGetPublicDictionaryEntryQueryOptions = <TData = Awaited<ReturnType<typeof getPublicDictionaryEntry>>, TError = ErrorType<unknown>>(entryId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicDictionaryEntry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicDictionaryEntryQueryKey(entryId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicDictionaryEntry>>> = ({ signal }) => getPublicDictionaryEntry(entryId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: entryId !== null && entryId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicDictionaryEntry>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicDictionaryEntryQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicDictionaryEntry>>>
+export type GetPublicDictionaryEntryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get an entry from the imported open dictionary
+ */
+
+export function useGetPublicDictionaryEntry<TData = Awaited<ReturnType<typeof getPublicDictionaryEntry>>, TError = ErrorType<unknown>>(
+ entryId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicDictionaryEntry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicDictionaryEntryQueryOptions(entryId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

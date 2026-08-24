@@ -1,10 +1,10 @@
 import React from 'react';
-import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
-import { Tabs } from 'expo-router';
+import { router, Tabs, usePathname } from 'expo-router';
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 import { SymbolView } from 'expo-symbols';
 
@@ -19,6 +19,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: 'house', selected: 'house.fill' }} />
         <Label>Home</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="cards">
+        <Icon sf={{ default: 'sparkles', selected: 'sparkles' }} />
+        <Label>Cards</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="review">
         <Icon sf={{ default: 'rectangle.stack', selected: 'rectangle.stack.fill' }} />
         <Label>Preparar</Label>
@@ -31,12 +35,18 @@ function NativeTabLayout() {
         <Icon sf={{ default: 'books.vertical', selected: 'books.vertical.fill' }} />
         <Label>Livros</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="dictionary">
+        <Icon sf={{ default: 'character.book.closed', selected: 'character.book.closed.fill' }} />
+        <Label>Dicionário</Label>
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
 
 function ClassicTabLayout() {
-  const colors = useColors();
+  const pathname = usePathname();
+  const vividScreen = pathname === '/cards' || pathname === '/review' || pathname === '/dictionary';
+  const colors = useColors(vividScreen ? 'dark' : undefined);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const isIOS = Platform.OS === 'ios';
@@ -51,6 +61,11 @@ function ClassicTabLayout() {
         headerStyle: { backgroundColor: colors.background },
         headerTintColor: colors.foreground,
         headerShadowVisible: false,
+        headerRight: () => (
+          <Pressable onPress={() => router.push('/settings' as never)} hitSlop={12} accessibilityLabel="Abrir configurações de estudo" style={{ marginRight: 18 }}>
+            <Feather name="settings" size={20} color={colors.foreground} />
+          </Pressable>
+        ),
         tabBarStyle: {
           position: 'absolute',
           backgroundColor: isIOS ? 'transparent' : colors.background,
@@ -89,6 +104,14 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
+        name="cards"
+        options={{
+          title: 'Cards',
+          tabBarIcon: ({ color }) =>
+            isIOS ? <SymbolView name="sparkles" tintColor={color} size={24} /> : <Feather name="star" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="review"
         options={{
           title: 'Preparar',
@@ -110,6 +133,13 @@ function ClassicTabLayout() {
           title: 'Especialistas',
           tabBarIcon: ({ color }) =>
             isIOS ? <SymbolView name="graduationcap" tintColor={color} size={24} /> : <Feather name="award" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="dictionary"
+        options={{
+          title: 'Dicionário',
+          tabBarIcon: ({ color }) => <Feather name="book" size={22} color={color} />,
         }}
       />
     </Tabs>

@@ -53,6 +53,9 @@ public class BookRowMapper implements RowMapper<Book> {
         OffsetDateTime offsetDateTime = rs.getObject("updated_at", OffsetDateTime.class);
         Instant updatedAt = offsetDateTime != null ? offsetDateTime.toInstant() : Instant.now();
 
+        int readingChapter = 1;
+        int readingOffset = 0;
+        try { readingChapter = rs.getInt("reading_chapter"); readingOffset = rs.getInt("reading_offset"); } catch (SQLException ignored) {}
         return Book.reconstitute(
             BookId.of(rs.getString("id")),
             rs.getString("title"),
@@ -60,7 +63,7 @@ public class BookRowMapper implements RowMapper<Book> {
             SourceType.fromString(rs.getString("source_type")),
             BookStatus.fromString(rs.getString("status")),
             CefrLevel.fromString(rs.getString("level")),
-            rs.getInt("progress"),
+            rs.getInt("progress"), readingChapter, readingOffset,
             rs.getString("cover_color"),
             content,
             plan,

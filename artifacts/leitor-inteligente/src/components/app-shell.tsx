@@ -1,4 +1,4 @@
-import { BookMarked, BookOpen, Compass, Library, NotebookText, Settings2 } from 'lucide-react';
+import { Beaker, BookMarked, BookOpen, Compass, Library, NotebookText, Search, Settings2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useHealthCheck, getHealthCheckQueryKey } from '@workspace/api-client-react';
@@ -8,6 +8,8 @@ const navItems = [
   { href: '/library', label: 'Biblioteca', icon: Library },
   { href: '/specialists', label: 'Especialistas', icon: BookMarked },
   { href: '/dictionary', label: 'Dicionário', icon: NotebookText },
+  { href: '/public-dictionary', label: 'Dicionário público', icon: Search },
+  { href: '/dictionary-test', label: 'Dicionário de teste', icon: Beaker },
   { href: '/settings', label: 'Preferências', icon: Settings2 },
 ];
 
@@ -23,7 +25,11 @@ function Brand() {
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const health = useHealthCheck({ query: { queryKey: getHealthCheckQueryKey() } });
-  const isActive = (href: string) => href === '/' ? location === '/' : location.startsWith(href);
+  const isActive = (href: string) => href === '/'
+    ? location === '/'
+    : href === '/dictionary'
+      ? location === href
+      : location === href || location.startsWith(href);
 
   return (
     <div className="app-shell">
