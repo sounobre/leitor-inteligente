@@ -29,6 +29,9 @@ public class DatabaseInitializer {
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """);
+    jdbc.execute("ALTER TABLE books ADD COLUMN IF NOT EXISTS reading_chapter INTEGER NOT NULL DEFAULT 1");
+    jdbc.execute("ALTER TABLE books ADD COLUMN IF NOT EXISTS reading_offset INTEGER NOT NULL DEFAULT 0");
+    jdbc.execute("ALTER TABLE books ADD COLUMN IF NOT EXISTS reading_position_updated_at TIMESTAMPTZ");
     jdbc.execute("""
         CREATE TABLE IF NOT EXISTS book_chapters (
           id TEXT PRIMARY KEY,
@@ -40,6 +43,19 @@ public class DatabaseInitializer {
           UNIQUE(book_id, position)
         )
         """);
+    jdbc.execute("""
+        CREATE TABLE IF NOT EXISTS book_vocabulary (
+          id BIGSERIAL PRIMARY KEY,
+          book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+          term TEXT NOT NULL,
+          normalized_term TEXT NOT NULL,
+          occurrences INTEGER NOT NULL DEFAULT 1,
+          chapters JSONB NOT NULL DEFAULT '[]',
+          card_created BOOLEAN NOT NULL DEFAULT FALSE,
+          UNIQUE(book_id, normalized_term)
+        )
+        """);
+    jdbc.execute("CREATE INDEX IF NOT EXISTS idx_book_vocabulary_term ON book_vocabulary(book_id, normalized_term)");
     jdbc.execute("""
         CREATE TABLE IF NOT EXISTS dictionary_sources (
           id TEXT PRIMARY KEY,
@@ -99,6 +115,69 @@ public class DatabaseInitializer {
         """);
     jdbc.execute("CREATE INDEX IF NOT EXISTS idx_dictionary_entries_term ON dictionary_entries (normalized_term)");
     jdbc.execute("CREATE INDEX IF NOT EXISTS idx_dictionary_entries_translation ON dictionary_entries (lower(translation))");
+    jdbc.execute("""
+        CREATE TABLE IF NOT EXISTS public_dictionary_sources (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          version TEXT NOT NULL,
+          source_url TEXT NOT NULL,
+          license TEXT NOT NULL,
+          attribution TEXT NOT NULL,
+          imported_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          entry_count INTEGER NOT NULL DEFAULT 0
+        )
+        """);
+    jdbc.execute("""
+        CREATE TABLE IF NOT EXISTS public_dictionary_entries (
+          id TEXT PRIMARY KEY,
+          source_id TEXT NOT NULL REFERENCES public_dictionary_sources(id) ON DELETE CASCADE,
+          term TEXT NOT NULL,
+          normalized_term TEXT NOT NULL,
+          part_of_speech TEXT NOT NULL DEFAULT '',
+          dataset_version TEXT NOT NULL DEFAULT '',
+          UNIQUE(source_id, normalized_term, part_of_speech)
+        )
+        """);
+    jdbc.execute("ALTER TABLE public_dictionary_entries ADD COLUMN IF NOT EXISTS dataset_version TEXT NOT NULL DEFAULT ''");
+    jdbc.execute("""
+        CREATE TABLE IF NOT EXISTS public_dictionary_senses (
+          id TEXT PRIMARY KEY,
+          entry_id TEXT NOT NULL REFERENCES public_dictionary_entries(id) ON DELETE CASCADE,
+          definition TEXT NOT NULL,
+          position INTEGER NOT NULL DEFAULT 1
+        )
+        """);
+    jdbc.execute("""
+        CREATE TABLE IF NOT EXISTS public_dictionary_forms (
+          id TEXT PRIMARY KEY,
+          entry_id TEXT NOT NULL REFERENCES public_dictionary_entries(id) ON DELETE CASCADE,
+          form TEXT NOT NULL,
+          tags TEXT NOT NULL DEFAULT ''
+        )
+        """);
+    jdbc.execute("""
+        CREATE TABLE IF NOT EXISTS public_dictionary_sounds (
+          id TEXT PRIMARY KEY,
+          entry_id TEXT NOT NULL REFERENCES public_dictionary_entries(id) ON DELETE CASCADE,
+          ipa TEXT NOT NULL DEFAULT '',
+          audio_url TEXT NOT NULL DEFAULT ''
+        )
+        """);
+    jdbc.execute("""
+        CREATE TABLE IF NOT EXISTS public_dictionary_import_checkpoints (
+          source_id TEXT PRIMARY KEY REFERENCES public_dictionary_sources(id) ON DELETE CASCADE,
+          dataset_version TEXT NOT NULL,
+          source_url TEXT NOT NULL,
+          last_line BIGINT NOT NULL DEFAULT 0,
+          skipped_lines BIGINT NOT NULL DEFAULT 0,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """);
+    jdbc.execute("ALTER TABLE public_dictionary_import_checkpoints ADD COLUMN IF NOT EXISTS total_lines BIGINT");
+    jdbc.execute("ALTER TABLE public_dictionary_import_checkpoints ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'PAUSED'");
+    jdbc.execute("ALTER TABLE public_dictionary_import_checkpoints ADD COLUMN IF NOT EXISTS error_message TEXT");
+    jdbc.execute("CREATE INDEX IF NOT EXISTS idx_public_dictionary_entries_term ON public_dictionary_entries (normalized_term)");
+    jdbc.execute("CREATE INDEX IF NOT EXISTS idx_public_dictionary_entries_term_prefix ON public_dictionary_entries (term text_pattern_ops)");
     // Older imports used the alphabetical headword (for example, "amends")
     // instead of the expression that follows it (for example, "make amends").
     // Repair only the recognizably English expression-shaped rows.

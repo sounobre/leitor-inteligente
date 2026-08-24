@@ -11,13 +11,33 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Public dictionary import"
+
+[[workflows.workflow]]
+name = "Public dictionary import"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd artifacts/api-server && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) mvn -q spring-boot:run -Dspring-boot.run.arguments=\"--server.port=8099 --dictionary.import.enabled=true --dictionary.import.url=https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl.gz --dictionary.import.version=kaikki-english-2026-08-20\""
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
 
 [postMerge]
 path = "scripts/post-merge.sh"
-timeoutMs = 20000
+timeoutMs = 120000
 
 [nix]
 channel = "stable-25_05"
