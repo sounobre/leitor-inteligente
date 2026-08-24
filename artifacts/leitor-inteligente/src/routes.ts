@@ -3,6 +3,7 @@ export const SPECIALISTS_ROUTE = '/specialists';
 export const DICTIONARY_ROUTE = '/dictionary';
 export const PUBLIC_DICTIONARY_ROUTE = '/public-dictionary';
 export const EN_PTBR_DICTIONARY_ROUTE = '/dictionary-en-ptbr';
+export const TEST_ROUTE = '/test';
 
 export const FANTASY_TRAIL_CARD = {
   href: FANTASY_TRAIL_ROUTE,
