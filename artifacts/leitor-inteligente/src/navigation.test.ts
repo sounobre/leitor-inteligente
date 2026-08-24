@@ -6,8 +6,6 @@ import {
   FANTASY_TRAIL_ROUTE,
   SPECIALISTS_CARD,
   SPECIALISTS_ROUTE,
-  TEST_DICTIONARY_CARD,
-  TEST_DICTIONARY_ROUTE,
 } from './routes';
 
 describe('entrada da trilha de Fantasia', () => {
@@ -20,14 +18,6 @@ describe('entrada da trilha de Fantasia', () => {
     expect(FANTASY_TRAIL_CARD.title).toBe('Fantasia');
     expect(FANTASY_TRAIL_CARD.description).toMatch(/atmosfera/);
     expect(FANTASY_TRAIL_CARD.description.trim().length).toBeGreaterThan(0);
-  });
-});
-
-describe('entrada do dicionário de teste', () => {
-  it('aponta para uma área separada do dicionário pessoal', () => {
-    expect(TEST_DICTIONARY_CARD.href).toBe(TEST_DICTIONARY_ROUTE);
-    expect(TEST_DICTIONARY_ROUTE).toBe('/dictionary-test');
-    expect(TEST_DICTIONARY_CARD.title).toBe('Dicionário de teste');
   });
 });
 

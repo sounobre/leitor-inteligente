@@ -12,14 +12,12 @@ export default function CardDetailScreen() {
   const colors = useColors('dark');
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { id, bookId, kind } = useLocalSearchParams<{ id: string; bookId?: string; kind?: string }>();
-  const { cards, preparedBooks, testDictionaryEntries, ready, favorites, archived, toggleFavorite, toggleArchived } = useStudy();
+  const { id, bookId } = useLocalSearchParams<{ id: string; bookId?: string }>();
+  const { cards, preparedBooks, ready, favorites, archived, toggleFavorite, toggleArchived } = useStudy();
   const card = cards.find((item) => String(item.id) === id && (!bookId || item.bookId === bookId)) ?? cards.find((item) => String(item.id) === id);
   const related = useMemo(() => card ? cards.filter((item) => item.bookId === card.bookId && item.deck === card.deck && item.id !== card.id).slice(0, 5) : [], [cards, card]);
-  const dictionaryEntry = testDictionaryEntries.find((entry) => entry.id === id);
 
   if (!ready) return <View style={[styles.loading, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.primary} /></View>;
-  if (!card && dictionaryEntry && kind === 'dictionary') return <DictionaryDetail entry={dictionaryEntry} colors={colors} router={router} insets={insets} />;
   if (!card) return <View style={[styles.loading, { backgroundColor: colors.background }]}><Text style={[styles.emptyTitle, { color: colors.foreground }]}>Card não encontrado</Text><Pressable onPress={() => router.back()}><Text style={[styles.backText, { color: colors.primary }]}>Voltar aos cards</Text></Pressable></View>;
 
   const favorite = !!favorites[String(card.id)];
@@ -68,10 +66,6 @@ export default function CardDetailScreen() {
       </View>
     </ScrollView>
   );
-}
-
-function DictionaryDetail({ entry, colors, router, insets }: { entry: { term: string; translation: string; partOfSpeech: string; senses: { definition: string; translation: string }[]; examples: { sentence: string; translation: string; explanation: string }[] }; colors: ReturnType<typeof useColors>; router: ReturnType<typeof useRouter>; insets: { top: number } }) {
-  return <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={[styles.container, { paddingTop: Platform.OS === 'web' ? 24 : insets.top + 14, paddingBottom: 40 }]}><View style={styles.topbar}><Pressable onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.card }]} accessibilityLabel="Voltar aos cards"><Feather name="arrow-left" size={19} color={colors.foreground} /></Pressable><Text style={[styles.kicker, { color: colors.primary }]}>DETALHE DO CARD</Text><View /></View><View style={[styles.hero, { backgroundColor: colors.card, borderColor: colors.border }]}><View style={[styles.badge, { backgroundColor: colors.secondary }]}><Text style={[styles.badgeText, { color: colors.secondaryForeground }]}>DICIONÁRIO · OFFLINE</Text></View><Text style={[styles.term, { color: colors.foreground, marginTop: 22 }]}>{entry.term}</Text><Text style={[styles.pronunciation, { color: colors.primary }]}>{entry.partOfSpeech}</Text><Text style={[styles.translation, { color: colors.foreground }]}>{entry.translation}</Text><Text style={[styles.status, { color: colors.mutedForeground }]}>Referência privada mantida neste aparelho</Text></View><View style={styles.sections}>{entry.senses.map((sense, index) => <DetailSection key={sense.definition} icon="book-open" title={index === 0 ? 'Definição' : `Definição ${index + 1}`} colors={colors}><Text style={[styles.body, { color: colors.foreground }]}>{sense.definition}</Text><Text style={[styles.exampleNote, { color: colors.mutedForeground }]}>{sense.translation}</Text></DetailSection>)}{entry.examples.length > 0 ? <DetailSection icon="message-circle" title="Exemplos em ação" colors={colors}>{entry.examples.map((example) => <View key={example.sentence} style={[styles.example, { backgroundColor: colors.secondary }]}><Text style={[styles.exampleText, { color: colors.secondaryForeground }]}>{example.sentence}</Text><Text style={[styles.exampleNote, { color: colors.mutedForeground }]}>{example.translation}</Text>{example.explanation ? <Text style={[styles.exampleNote, { color: colors.mutedForeground }]}>{example.explanation}</Text> : null}</View>)}</DetailSection> : null}</View></ScrollView>;
 }
 
 function DetailSection({ icon, title, colors, children }: { icon: React.ComponentProps<typeof Feather>['name']; title: string; colors: ReturnType<typeof useColors>; children: React.ReactNode }) {

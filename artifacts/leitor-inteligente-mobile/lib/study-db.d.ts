@@ -25,10 +25,6 @@ export type SemanticConnection = { fromId: string; toId: string; relationship: s
 export type StudyPlan = { vocabulary: StudyPlanItem[]; idioms: StudyPlanItem[]; phrasalVerbs: StudyPlanItem[]; visualCards: VisualStudyCard[]; linguisticDecks: LinguisticDeck[]; semanticMap: { nodes: SemanticNode[]; connections: SemanticConnection[] } };
 export type PreparedBook = StudyBook & { plan: StudyPlan; chapters: ReadingChapter[] };
 export type ReadingPositionChange = { bookId: string; chapter: number; offset: number; progress: number; updatedAt: string };
-export type TestDictionarySense = { id: string; definition: string; translation: string };
-export type TestDictionaryExample = { id: string; sentence: string; translation: string; explanation: string; createdAt: string };
-export type TestDictionaryCard = { id: string; entryId: string; exampleId?: string; term: string; translation: string; reviewed: number };
-export type TestDictionaryEntry = { id: string; term: string; translation: string; partOfSpeech: string; senses: TestDictionarySense[]; examples: TestDictionaryExample[]; cards: TestDictionaryCard[] };
 
 export function initialiseStudyDb(): Promise<void>;
 export function getCards(): Promise<StudyCard[]>;
@@ -36,10 +32,6 @@ export function getBooks(): Promise<StudyBook[]>;
 export function getPreparedBooks(): Promise<PreparedBook[]>;
 export function savePreparedBooks(books: PreparedBook[]): Promise<void>;
 export function toggleCard(id: number, reviewed: boolean): Promise<void>;
-export function getTestDictionaryEntries(): Promise<TestDictionaryEntry[]>;
-export function saveTestDictionaryEntries(entries: TestDictionaryEntry[]): Promise<void>;
-export function toggleTestDictionaryCard(id: string, reviewed: boolean): Promise<void>;
-export function createTestDictionaryCard(entry: TestDictionaryEntry): Promise<TestDictionaryCard>;
 export function updateReadingPosition(bookId: string, chapter: number, offset: number, progress: number): Promise<void>;
 export function getPendingReadingPositions(): Promise<ReadingPositionChange[]>;
 export function removePendingReadingPosition(bookId: string, updatedAt: string): Promise<void>;

@@ -1,28 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { useStudy } from '@/context/StudyContext';
-import { TestDictionaryCard, TestDictionaryEntry } from '@/lib/study-db';
 import { getPublicDictionaryEntry, PublicDictionaryEntry, PublicDictionarySummary, searchPublicDictionary } from '@/lib/public-dictionary';
 
 export default function DictionaryScreen() {
   const colors = useColors('dark');
-  const { ready, testDictionaryEntries, syncing, syncError, lastSyncAt, lastSyncAttemptAt, setTestCardReviewed, createTestCard } = useStudy();
-  const [query, setQuery] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const ready = true;
   const [publicQuery, setPublicQuery] = useState('');
   const [publicResults, setPublicResults] = useState<PublicDictionarySummary[]>([]);
   const [publicSelected, setPublicSelected] = useState<PublicDictionaryEntry | null>(null);
   const [publicLoading, setPublicLoading] = useState(false);
   const [publicError, setPublicError] = useState('');
   const insets = useSafeAreaInsets();
-  const results = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase();
-    return testDictionaryEntries.filter((entry) => !needle || `${entry.term} ${entry.translation}`.toLocaleLowerCase().includes(needle));
-  }, [query, testDictionaryEntries]);
-  const selected = testDictionaryEntries.find((entry) => entry.id === selectedId) ?? null;
   const topPadding = Platform.OS === 'web' ? 67 : insets.top + 18;
   useEffect(() => {
     if (!publicQuery.trim()) { setPublicResults([]); setPublicError(''); return; }
@@ -39,68 +30,8 @@ export default function DictionaryScreen() {
       <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}><Feather name="search" size={18} color={colors.mutedForeground} /><TextInput value={publicQuery} onChangeText={(value) => { setPublicQuery(value); setPublicSelected(null); }} placeholder="Pesquisar no dicionário público" placeholderTextColor={colors.mutedForeground} style={[styles.input, { color: colors.foreground }]} testID="public-dictionary-search" /></View>
       {publicLoading && <ActivityIndicator color={colors.primary} />}
       {publicError ? <Text style={[styles.translation, { color: colors.destructive }]}>{publicError}</Text> : publicSelected ? <PublicEntryDetail entry={publicSelected} colors={colors} onBack={() => setPublicSelected(null)} /> : publicQuery.trim() ? <View style={styles.results}>{publicResults.map((entry) => <Pressable key={entry.id} onPress={() => { setPublicLoading(true); void getPublicDictionaryEntry(entry.id).then(setPublicSelected).catch((error) => setPublicError(error instanceof Error ? error.message : 'Verbete indisponível.')).finally(() => setPublicLoading(false)); }} style={[styles.result, { backgroundColor: colors.card, borderColor: colors.border }]}><View style={{ flex: 1 }}><Text style={[styles.term, { color: colors.foreground }]}>{entry.term}</Text><Text style={[styles.translation, { color: colors.mutedForeground }]}>{entry.partOfSpeech} · {entry.senseCount} sentidos</Text></View><Feather name="chevron-right" size={18} color={colors.mutedForeground} /></Pressable>)}</View> : null}
-      <Text style={[styles.eyebrow, { color: colors.primary, marginTop: 26 }]}>VOCABULÁRIO LOCAL</Text>
-      <Text style={[styles.intro, { color: colors.mutedForeground }]}>Seus verbetes de teste e cards continuam disponíveis abaixo.</Text>
-      <DictionarySyncNotice colors={colors} syncing={syncing} syncError={syncError} lastSyncAt={lastSyncAt} lastSyncAttemptAt={lastSyncAttemptAt} />
-      <View style={styles.statsRow}><Stat icon="book-open" value={`${testDictionaryEntries.length}`} label="palavras" colors={colors} /><Stat icon="wifi-off" value="local" label="offline" colors={colors} /><Stat icon="layers" value={`${testDictionaryEntries.filter((entry) => entry.cards.length > 0).length}`} label="cards" colors={colors} /></View>
-      <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Feather name="search" size={18} color={colors.mutedForeground} />
-        <TextInput value={query} onChangeText={setQuery} placeholder="Buscar palavra ou tradução" placeholderTextColor={colors.mutedForeground} style={[styles.input, { color: colors.foreground }]} testID="test-dictionary-search" />
-      </View>
-      {selected ? <EntryDetail entry={selected} colors={colors} onBack={() => setSelectedId(null)} onToggleCard={setTestCardReviewed} onCreateCard={createTestCard} /> : (
-        <>
-          <Text style={[styles.resultLabel, { color: colors.mutedForeground }]}>{results.length} palavras disponíveis offline</Text>
-          <View style={styles.results}>{results.map((entry) => <Pressable key={entry.id} onPress={() => setSelectedId(entry.id)} style={[styles.result, { backgroundColor: colors.card, borderColor: colors.border }]} testID={`test-entry-${entry.id}`}><View style={{ flex: 1 }}><Text style={[styles.term, { color: colors.foreground }]}>{entry.term}</Text><Text style={[styles.translation, { color: colors.mutedForeground }]}>{entry.translation}</Text></View><View style={styles.resultMeta}><Text style={[styles.part, { color: colors.primary }]}>{entry.partOfSpeech}</Text><Feather name="chevron-right" size={18} color={colors.mutedForeground} /></View></Pressable>)}</View>
-          {results.length === 0 && <View style={[styles.empty, { borderColor: colors.border }]}><Feather name="search" size={23} color={colors.mutedForeground} /><Text style={[styles.translation, { color: colors.mutedForeground }]}>Nenhuma palavra encontrada.</Text></View>}
-        </>
-      )}
     </ScrollView>
   );
-}
-
-function DictionarySyncNotice({
-  colors,
-  syncing,
-  syncError,
-  lastSyncAt,
-  lastSyncAttemptAt,
-}: {
-  colors: ReturnType<typeof useColors>;
-  syncing: boolean;
-  syncError: boolean;
-  lastSyncAt: string | null;
-  lastSyncAttemptAt: string | null;
-}) {
-  const statusTitle = syncing
-    ? 'Cópia local disponível · verificando atualizações'
-    : syncError
-      ? 'Sem conexão · usando a cópia local'
-      : 'Resultados locais disponíveis';
-  const statusDetail = syncing
-    ? 'Você pode continuar estudando enquanto a sincronização é tentada.'
-    : syncError
-      ? lastSyncAt
-        ? `Não foi possível atualizar agora. Última sincronização: ${formatSyncDate(lastSyncAt)}.`
-        : 'Não foi possível sincronizar ainda. Os resultados salvos neste aparelho continuam disponíveis.'
-      : lastSyncAt
-        ? `Última sincronização: ${formatSyncDate(lastSyncAt)}.`
-        : lastSyncAttemptAt
-          ? 'A primeira sincronização ainda não terminou. Mostrando o que está salvo neste aparelho.'
-          : 'Esta tela usa os resultados salvos neste aparelho.';
-
-  return (
-    <View style={[styles.syncNotice, { backgroundColor: syncError ? colors.muted : colors.secondary, borderColor: syncError ? colors.border : colors.secondary }]}>
-      <Feather name={syncError ? 'wifi-off' : syncing ? 'refresh-cw' : 'check-circle'} size={18} color={syncError ? colors.destructive : colors.secondaryForeground} />
-      <View style={styles.syncNoticeCopy}>
-        <Text style={[styles.syncNoticeTitle, { color: syncError ? colors.foreground : colors.secondaryForeground }]}>{statusTitle}</Text>
-        <Text style={[styles.syncNoticeText, { color: syncError ? colors.mutedForeground : colors.secondaryForeground }]}>{statusDetail}</Text>
-      </View>
-    </View>
-  );
-}
-
-function formatSyncDate(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
 }
 
 function PublicEntryDetail({ entry, colors, onBack }: { entry: PublicDictionaryEntry; colors: ReturnType<typeof useColors>; onBack: () => void }) {
@@ -113,38 +44,6 @@ function PublicEntryDetail({ entry, colors, onBack }: { entry: PublicDictionaryE
     {entry.forms.length > 0 && <Text style={[styles.translation, { color: colors.mutedForeground }]}>Formas: {entry.forms.map((form) => form.form).join(', ')}</Text>}
     <Text style={[styles.translation, { color: colors.mutedForeground, marginTop: 14 }]}>Fonte: {entry.source.attribution}</Text>
   </View>;
-}
-
-function EntryDetail({ entry, colors, onBack, onToggleCard, onCreateCard }: { entry: TestDictionaryEntry; colors: ReturnType<typeof useColors>; onBack: () => void; onToggleCard: (id: string, reviewed: boolean) => Promise<void>; onCreateCard: (entry: TestDictionaryEntry) => Promise<unknown> }) {
-  return <View style={styles.detail}>
-    <Pressable onPress={onBack} style={styles.back}><Feather name="arrow-left" size={16} color={colors.primary} /><Text style={[styles.backText, { color: colors.primary }]}>Voltar ao vocabulário</Text></Pressable>
-    <View style={[styles.detailArt, { backgroundColor: colors.muted }]}><Feather name="book-open" size={55} color={colors.primary} /><View style={[styles.detailArtBadge, { borderColor: colors.accent }]}><Feather name="volume-2" size={15} color={colors.accent} /></View></View>
-    <Text style={[styles.detailTerm, { color: colors.primary }]}>{entry.term}</Text>
-    <View style={styles.detailMeta}><Text style={[styles.part, { color: colors.primary }]}>{entry.partOfSpeech}</Text><Text style={[styles.translation, { color: colors.mutedForeground }]}>{entry.translation}</Text></View>
-    <Pressable onPress={() => void onCreateCard(entry)} style={[styles.createCard, { backgroundColor: colors.primary }]}><Feather name={entry.cards.length > 0 ? 'check' : 'plus-square'} size={17} color={colors.primaryForeground} /><Text style={[styles.createCardText, { color: colors.primaryForeground }]}>{entry.cards.length > 0 ? 'Card criado · revisar agora' : 'Transformar em card de estudo'}</Text></Pressable>
-    <Text style={[styles.label, { color: colors.mutedForeground }]}>SENTIDOS</Text>
-    {entry.senses.map((sense) => <View key={sense.id} style={[styles.sense, { borderLeftColor: colors.primary }]}><Text style={[styles.senseText, { color: colors.foreground }]}>{sense.translation || sense.definition}</Text></View>)}
-    {entry.examples.length > 0 && <><Text style={[styles.label, { color: colors.mutedForeground }]}>EXEMPLOS SALVOS</Text>{entry.examples.map((example) => <View key={example.id} style={[styles.example, { backgroundColor: colors.secondary }]}><Text style={[styles.exampleText, { color: colors.secondaryForeground }]}>{example.sentence}</Text><Text style={[styles.translation, { color: colors.secondaryForeground }]}>{example.translation}</Text></View>)}</>}
-    {entry.cards.length > 0 && <><Text style={[styles.label, { color: colors.mutedForeground }]}>CARTÕES DE ESTUDO</Text>{entry.cards.map((card) => <OfflineCard key={card.id} card={card} colors={colors} onToggle={onToggleCard} />)}</>}
-  </View>;
-}
-
-function Stat({ icon, value, label, colors }: { icon: 'book-open' | 'wifi-off' | 'layers'; value: string; label: string; colors: ReturnType<typeof useColors> }) {
-  return <View style={[styles.stat, { backgroundColor: colors.card, borderColor: colors.border }]}><Feather name={icon} size={14} color={colors.primary} /><Text style={[styles.statValue, { color: colors.foreground }]}>{value}</Text><Text style={[styles.statLabel, { color: colors.mutedForeground }]}>{label}</Text></View>;
-}
-
-function OfflineCard({ card, colors, onToggle }: { card: TestDictionaryCard; colors: ReturnType<typeof useColors>; onToggle: (id: string, reviewed: boolean) => Promise<void> }) {
-  const [flipped, setFlipped] = useState(false);
-  const [archived, setArchived] = useState(false);
-  const reviewed = card.reviewed === 1;
-  return <Pressable onPress={() => setFlipped((value) => !value)} accessibilityLabel={flipped ? `Voltar o card de ${card.term} para a frente` : `Mostrar o verso do card de ${card.term}`} accessibilityHint="Toque em qualquer área livre do card para alternar entre frente e verso" style={[styles.card, { backgroundColor: reviewed ? colors.secondary : colors.card, borderColor: colors.border, opacity: archived ? .62 : 1 }]}>
-    <View style={[styles.cardArt, { backgroundColor: colors.muted }]}><View style={styles.cardArtTop}><Text style={[styles.cardArtLabel, { color: colors.foreground }]}>NEW WORD</Text><Pressable onPress={(event) => { event.stopPropagation(); setArchived((value) => !value); }} accessibilityLabel={archived ? 'Restaurar card arquivado' : 'Arquivar card'}><Feather name="archive" size={18} color={colors.foreground} /></Pressable></View>{!flipped ? <View style={styles.cardArtCopy}><Text style={[styles.cardArtTerm, { color: colors.foreground }]}>{card.term}</Text><Text style={[styles.cardArtQuestion, { color: colors.foreground }]}>{archived ? 'Arquivado' : 'Quer aprender?'}</Text></View> : null}<Pressable onPress={(event) => { event.stopPropagation(); setFlipped((value) => !value); }} style={[styles.cardPlay, { borderColor: colors.accent }]}><Feather name="chevron-down" size={17} color={colors.accent} /></Pressable></View>
-     <View style={styles.cardContent}>
-       <View style={styles.cardTop}><Text style={[styles.part, { color: colors.primary }]}>CARD · OFFLINE</Text><Pressable onPress={(event) => { event.stopPropagation(); void onToggle(card.id, !reviewed); }} testID={`test-card-${card.id}`} accessibilityLabel={reviewed ? 'Desmarcar card revisado' : 'Marcar card como revisado'}><Feather name={reviewed ? 'check-circle' : 'more-horizontal'} size={23} color={reviewed ? colors.accent : colors.mutedForeground} /></Pressable></View>
-       {!flipped ? <><Text style={[styles.cardTerm, { color: colors.foreground }]}>{card.term}</Text><Text style={[styles.cardPart, { color: colors.mutedForeground }]}>vocabulário</Text><Pressable onPress={(event) => { event.stopPropagation(); setFlipped((value) => !value); }} style={[styles.cardFlipPrompt, { borderColor: colors.border }]}><Text style={[styles.cardFlipTitle, { color: colors.foreground }]}>Quer aprender esta palavra?</Text><Text style={[styles.cardFlipHint, { color: colors.mutedForeground }]}>toque para virar o card</Text></Pressable></> : <><Text style={[styles.cardTerm, { color: colors.foreground }]}>{card.term}</Text><View style={[styles.cardTranslation, { backgroundColor: colors.background }]}><Text style={[styles.cardTranslationText, { color: colors.foreground }]}>{card.translation}</Text></View><Pressable onPress={(event) => { event.stopPropagation(); setFlipped((value) => !value); }}><Text style={[styles.cardFlipBack, { color: colors.primary }]}>Toque para voltar à frente</Text></Pressable></>}
-        <View style={styles.cardActions}><Pressable onPress={(event) => { event.stopPropagation(); setArchived((value) => !value); }} style={[styles.archiveButton, { borderColor: colors.border }]}><Feather name="archive" size={15} color={colors.mutedForeground} /><Text style={[styles.archiveText, { color: colors.mutedForeground }]}>{archived ? 'Restaurar' : 'Arquivar'}</Text></Pressable><Pressable onPress={(event) => { event.stopPropagation(); void onToggle(card.id, !reviewed); }} style={[styles.learnButton, { borderColor: colors.primary, backgroundColor: reviewed ? colors.primary : 'transparent' }]}><Feather name={reviewed ? 'check' : 'repeat'} size={16} color={reviewed ? colors.primaryForeground : colors.primary} /><Text style={[styles.learnButtonText, { color: reviewed ? colors.primaryForeground : colors.primary }]}>{reviewed ? 'Aprendido' : 'Aprender'}</Text></Pressable></View>
-    </View>
-   </Pressable>;
 }
 
 const styles = StyleSheet.create({

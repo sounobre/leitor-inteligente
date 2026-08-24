@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createTestDictionaryCard, getBooks, getCards, getPreparedBooks, getPendingReadingPositions, getTestDictionaryEntries, initialiseStudyDb, PreparedBook, removePendingReadingPosition, savePreparedBooks, saveTestDictionaryEntries, StudyBook, StudyCard, TestDictionaryEntry, toggleCard, toggleTestDictionaryCard, TestDictionaryCard, updateReadingPosition } from '@/lib/study-db';
+import { getBooks, getCards, getPreparedBooks, getPendingReadingPositions, initialiseStudyDb, PreparedBook, removePendingReadingPosition, savePreparedBooks, StudyBook, StudyCard, toggleCard, updateReadingPosition } from '@/lib/study-db';
 import { syncPendingReadingPositions } from '@/lib/reading-position-sync';
 import { defaults, getPreferences, Preferences, savePreferences } from '@/lib/preferences';
 
@@ -47,11 +47,8 @@ type StudyContextValue = {
   syncError: boolean;
   lastSyncAttemptAt: string | null;
   lastSyncAt: string | null;
-  testDictionaryEntries: TestDictionaryEntry[];
   refresh: () => Promise<void>;
   setReviewed: (id: number, reviewed: boolean) => Promise<void>;
-  setTestCardReviewed: (id: string, reviewed: boolean) => Promise<void>;
-  createTestCard: (entry: TestDictionaryEntry) => Promise<TestDictionaryCard>;
   favorites: Record<string, boolean>;
   archived: Record<string, boolean>;
   toggleFavorite: (id: string) => void;
@@ -79,7 +76,6 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [pendingReadingPositions, setPendingReadingPositions] = useState(0);
   const [readingPositionSyncError, setReadingPositionSyncError] = useState(false);
-  const [testDictionaryEntries, setTestDictionaryEntries] = useState<TestDictionaryEntry[]>([]);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [archived, setArchived] = useState<Record<string, boolean>>({});
   const [speechAccent, setSpeechAccent] = useState<SpeechAccent>('en-US');
@@ -91,7 +87,6 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
     setCards(items);
     setBooks(await getBooks());
     setPreparedBooks(await getPreparedBooks());
-    setTestDictionaryEntries(await getTestDictionaryEntries());
   };
 
   useEffect(() => {
@@ -156,13 +151,6 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
         const payload = await response.json() as { books: PreparedBook[] };
         if (!Array.isArray(payload.books)) throw new Error('Invalid study sync payload');
         await savePreparedBooks(payload.books.filter((book) => book.status === 'READY'));
-        const dictionaryResponse = await fetch(`${apiBase}/api/test-dictionary/sync`, {
-          signal: AbortSignal.timeout(10000),
-        });
-        if (!dictionaryResponse.ok) throw new Error(`Test dictionary sync failed: ${dictionaryResponse.status}`);
-        const dictionaryPayload = await dictionaryResponse.json() as TestDictionaryEntry[];
-        if (!Array.isArray(dictionaryPayload)) throw new Error('Invalid test dictionary sync payload');
-        await saveTestDictionaryEntries(dictionaryPayload);
         await refresh();
         setSyncError(false);
         const successAt = new Date().toISOString();
@@ -219,22 +207,10 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
   };
 
   const value = useMemo(() => ({
-    cards, books, preparedBooks, testDictionaryEntries, ready, syncing, syncError, lastSyncAttemptAt, lastSyncAt, pendingReadingPositions, readingPositionSyncError, retryReadingPositions, refresh,
+     cards, books, preparedBooks, ready, syncing, syncError, lastSyncAttemptAt, lastSyncAt, pendingReadingPositions, readingPositionSyncError, retryReadingPositions, refresh,
     setReviewed: async (id: number, reviewed: boolean) => {
       await toggleCard(id, reviewed);
       setCards((current) => current.map((card) => card.id === id ? { ...card, reviewed: reviewed ? 1 : 0 } : card));
-    },
-    setTestCardReviewed: async (id: string, reviewed: boolean) => {
-      await toggleTestDictionaryCard(id, reviewed);
-      setTestDictionaryEntries((current) => current.map((entry) => ({
-        ...entry,
-        cards: entry.cards.map((card) => card.id === id ? { ...card, reviewed: reviewed ? 1 : 0 } : card),
-      })));
-    },
-    createTestCard: async (entry: TestDictionaryEntry) => {
-      const card = await createTestDictionaryCard(entry);
-      setTestDictionaryEntries((current) => current.map((item) => item.id === entry.id && !item.cards.some((saved) => saved.id === card.id) ? { ...item, cards: [card, ...item.cards] } : item));
-      return card;
     },
     favorites, archived,
     toggleFavorite: (id: string) => setFavorites((current) => ({ ...current, [id]: !current[id] })),
@@ -248,7 +224,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
       setBooks((current) => current.map((book) => book.id === bookId ? { ...book, readingChapter: chapter, readingOffset: offset, progress } : book));
       setPreparedBooks((current) => current.map((book) => book.id === bookId ? { ...book, readingChapter: chapter, readingOffset: offset, progress } : book));
     },
-  }), [cards, books, preparedBooks, testDictionaryEntries, ready, syncing, syncError, lastSyncAttemptAt, lastSyncAt, favorites, archived, speechAccent, preferences]);
+   }), [cards, books, preparedBooks, ready, syncing, syncError, lastSyncAttemptAt, lastSyncAt, favorites, archived, speechAccent, preferences]);
 
   return <StudyContext.Provider value={value}>{children}</StudyContext.Provider>;
 }

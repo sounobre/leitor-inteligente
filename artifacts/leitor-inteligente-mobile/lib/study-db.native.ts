@@ -40,13 +40,6 @@ export type PreparedBook = StudyBook & {
   chapters: ReadingChapter[];
 };
 export type ReadingPositionChange = { bookId: string; chapter: number; offset: number; progress: number; updatedAt: string };
-export type TestDictionarySense = { id: string; definition: string; translation: string };
-export type TestDictionaryExample = { id: string; sentence: string; translation: string; explanation: string; createdAt: string };
-export type TestDictionaryCard = { id: string; entryId: string; exampleId?: string; term: string; translation: string; reviewed: number };
-export type TestDictionaryEntry = {
-  id: string; term: string; translation: string; partOfSpeech: string;
-  senses: TestDictionarySense[]; examples: TestDictionaryExample[]; cards: TestDictionaryCard[];
-};
 
 let database: SQLite.SQLiteDatabase | null = null;
 async function getDb() {
@@ -77,15 +70,6 @@ export async function initialiseStudyDb() {
       visual_cue TEXT NOT NULL DEFAULT '', technique TEXT NOT NULL DEFAULT '',
       reviewed INTEGER NOT NULL DEFAULT 0, UNIQUE(book_id, remote_id)
     );
-    CREATE TABLE IF NOT EXISTS test_dictionary_entries (
-      id TEXT PRIMARY KEY, term TEXT NOT NULL, translation TEXT NOT NULL,
-      part_of_speech TEXT NOT NULL, payload_json TEXT NOT NULL, synced_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS test_dictionary_cards (
-      id TEXT PRIMARY KEY, entry_id TEXT NOT NULL REFERENCES test_dictionary_entries(id) ON DELETE CASCADE,
-      example_id TEXT, term TEXT NOT NULL, translation TEXT NOT NULL,
-      reviewed INTEGER NOT NULL DEFAULT 0
-    );
   `);
   // Upgrade the prototype table, which had sample cards but no book identity.
   // Those rows are removed below instead of being presented as prepared books.
@@ -101,75 +85,6 @@ export async function initialiseStudyDb() {
   await db.execAsync('CREATE UNIQUE INDEX IF NOT EXISTS study_cards_book_remote_idx ON study_cards(book_id, remote_id);');
 }
 
-export async function getTestDictionaryEntries() {
-  const db = await getDb();
-  const rows = await db.getAllAsync<{ payloadJson: string }>('SELECT payload_json AS payloadJson FROM test_dictionary_entries ORDER BY term');
-  const localCards = await db.getAllAsync<TestDictionaryCard>('SELECT id, entry_id AS entryId, example_id AS exampleId, term, translation, reviewed FROM test_dictionary_cards');
-  const reviewedById = new Map(localCards.map((card) => [card.id, card]));
-  const localByEntry = new Map<string, TestDictionaryCard[]>();
-  localCards.forEach((card) => localByEntry.set(card.entryId, [...(localByEntry.get(card.entryId) ?? []), card]));
-  return rows.map(({ payloadJson }) => parseTestEntry(payloadJson))
-    .filter((entry): entry is TestDictionaryEntry => entry !== null)
-    .map((entry) => ({
-      ...entry,
-      cards: [...entry.cards, ...(localByEntry.get(entry.id) ?? []).filter((local) => !entry.cards.some((card) => card.id === local.id))].map((card) => ({ ...card, reviewed: reviewedById.get(card.id)?.reviewed ?? card.reviewed ?? 0 })),
-    }));
-}
-
-export async function saveTestDictionaryEntries(entries: TestDictionaryEntry[]) {
-  const db = await getDb();
-  await db.withTransactionAsync(async () => {
-    const ids = entries.map((entry) => entry.id);
-    if (ids.length === 0) {
-      await db.runAsync('DELETE FROM test_dictionary_entries');
-      return;
-    }
-    const placeholders = ids.map(() => '?').join(',');
-    await db.runAsync(`DELETE FROM test_dictionary_entries WHERE id NOT IN (${placeholders})`, ...ids);
-    for (const entry of entries) {
-      await db.runAsync(
-        `INSERT INTO test_dictionary_entries (id, term, translation, part_of_speech, payload_json, synced_at)
-         VALUES (?, ?, ?, ?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET term=excluded.term, translation=excluded.translation,
-         part_of_speech=excluded.part_of_speech, payload_json=excluded.payload_json, synced_at=excluded.synced_at`,
-        entry.id, entry.term, entry.translation, entry.partOfSpeech, JSON.stringify(entry), new Date().toISOString(),
-      );
-      await db.runAsync(
-        `INSERT INTO test_dictionary_cards (id, entry_id, example_id, term, translation, reviewed)
-         VALUES (?, ?, NULL, ?, ?, 0) ON CONFLICT(id) DO NOTHING`,
-        `local-card-${entry.id}`, entry.id, entry.term, entry.translation,
-      );
-      const cardIds = (entry.cards ?? []).map((card) => card.id);
-      if (cardIds.length === 0) {
-        // Keep cards created locally; a sync payload may not know about them yet.
-      } else {
-        const cardPlaceholders = cardIds.map(() => '?').join(',');
-        await db.runAsync(`DELETE FROM test_dictionary_cards WHERE entry_id = ? AND id NOT IN (${cardPlaceholders}) AND id NOT LIKE 'local-card-%'`, entry.id, ...cardIds);
-      }
-      for (const card of entry.cards ?? []) {
-        await db.runAsync(
-          `INSERT INTO test_dictionary_cards (id, entry_id, example_id, term, translation, reviewed)
-           VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET term=excluded.term, translation=excluded.translation, example_id=excluded.example_id`,
-          card.id, entry.id, card.exampleId ?? null, card.term, card.translation, card.reviewed ? 1 : 0,
-        );
-      }
-    }
-  });
-}
-
-export async function toggleTestDictionaryCard(id: string, reviewed: boolean) {
-  const db = await getDb();
-  await db.runAsync('UPDATE test_dictionary_cards SET reviewed = ? WHERE id = ?', reviewed ? 1 : 0, id);
-}
-
-export async function createTestDictionaryCard(entry: TestDictionaryEntry) {
-  const db = await getDb();
-  const existing = await db.getFirstAsync<TestDictionaryCard>('SELECT id, entry_id AS entryId, example_id AS exampleId, term, translation, reviewed FROM test_dictionary_cards WHERE entry_id = ? LIMIT 1', entry.id);
-  if (existing) return existing;
-  const card: TestDictionaryCard = { id: `local-card-${entry.id}`, entryId: entry.id, term: entry.term, translation: entry.translation, reviewed: 0 };
-  await db.runAsync('INSERT INTO test_dictionary_cards (id, entry_id, example_id, term, translation, reviewed) VALUES (?, ?, NULL, ?, ?, 0)', card.id, card.entryId, card.term, card.translation);
-  return card;
-}
 
 export async function getCards() {
   const db = await getDb();
@@ -280,15 +195,4 @@ function normalizePlan(plan: Partial<StudyPlan>): StudyPlan {
       connections: Array.isArray(plan.semanticMap?.connections) ? plan.semanticMap.connections : [],
     },
   };
-}
-
-function parseTestEntry(value: string): TestDictionaryEntry | null {
-  try {
-    const entry = JSON.parse(value) as TestDictionaryEntry;
-    return entry && typeof entry.id === 'string' && Array.isArray(entry.senses) && Array.isArray(entry.examples)
-      ? entry
-      : null;
-  } catch {
-    return null;
-  }
 }
