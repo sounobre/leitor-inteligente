@@ -31,7 +31,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class EnglishPortugueseDictionaryImporter {
     public static final String SOURCE_ID = "wiktextract-english-portuguese-br";
-    public static final String SOURCE_NAME = "Kaikki / Wiktextract (Wiktionary) — traduções inglês–português";
+    public static final String SOURCE_NAME = "Kaikki / Wiktextract (Wiktionary) — vocabulário inglês e traduções";
     public static final String SOURCE_LICENSE = "CC BY-SA 4.0 (conteúdo do Wiktionary; consulte os avisos da edição)";
     public static final String SOURCE_ATTRIBUTION =
         "Traduções extraídas do Wiktionary por Wiktextract/Kaikki; https://kaikki.org/";
@@ -122,7 +122,10 @@ public class EnglishPortugueseDictionaryImporter {
             String pos = text(root, "pos");
             List<Translation> result = new ArrayList<>();
             JsonNode translations = root.path("translations");
-            if (!translations.isArray()) return result;
+            if (!translations.isArray()) {
+                return List.of(new Translation(
+                    stableId(normalize(term) + "\u0000\u0000" + pos), term.trim(), "", pos));
+            }
             translations.forEach(item -> {
                 String language = text(item, "lang_code");
                 String languageName = text(item, "lang");
@@ -134,6 +137,10 @@ public class EnglishPortugueseDictionaryImporter {
                     result.add(new Translation(stableId(key), term.trim(), translated, pos));
                 }
             });
+            if (result.isEmpty()) {
+                result.add(new Translation(
+                    stableId(normalize(term) + "\u0000\u0000" + pos), term.trim(), "", pos));
+            }
             return result;
         } catch (Exception exception) {
             throw new IllegalArgumentException("JSONL inválido", exception);

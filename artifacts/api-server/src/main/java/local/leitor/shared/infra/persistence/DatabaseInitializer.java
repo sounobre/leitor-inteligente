@@ -75,7 +75,7 @@ public class DatabaseInitializer {
           headword TEXT NOT NULL DEFAULT '',
           term TEXT NOT NULL,
           normalized_term TEXT NOT NULL,
-          translation TEXT NOT NULL,
+           translation TEXT NOT NULL DEFAULT '',
           part_of_speech TEXT NOT NULL DEFAULT 'expressão',
           usage_labels TEXT NOT NULL DEFAULT '',
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -231,9 +231,9 @@ export function PublicDictionaryPage({ endpoint = '/api/public-dictionary', impo
               </div>
               <div className="mb-8">
                 <h3 className="text-[11px] font-mono uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-4">Sentidos</h3>
-                <div className="flex flex-col gap-4">
-                  {entry.data.senses.map((sense) => <div key={sense.id} className="pl-4 border-l-2 border-[hsl(var(--primary)/0.3)]"><p className="text-[15px] leading-relaxed m-0">{sense.definition}</p></div>)}
-                </div>
+                 <div className="flex flex-col gap-4">
+                   {entry.data.senses.some((sense) => sense.definition.trim()) ? entry.data.senses.map((sense) => <div key={sense.id} className="pl-4 border-l-2 border-[hsl(var(--primary)/0.3)]"><p className="text-[15px] leading-relaxed m-0">{sense.definition}</p></div>) : <div className="notice">Ainda não encontramos uma tradução pública para esta palavra.</div>}
+                 </div>
               </div>
               {entry.data.forms.length > 0 && <div className="mb-8"><h3 className="text-[11px] font-mono uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-3">Formas</h3><div className="flex flex-wrap gap-2">{entry.data.forms.map((form) => <span key={form.id} className="badge">{form.form}{form.tags ? ` · ${form.tags.replaceAll('|', ', ')}` : ''}</span>)}</div></div>}
               {entry.data.sounds.length > 0 && <div className="mb-8"><h3 className="text-[11px] font-mono uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-3">Pronúncia</h3><div className="flex flex-col gap-2">{entry.data.sounds.map((sound) => <div key={sound.id} className="flex items-center gap-3 text-[13px]"><Volume2 size={15} className="text-[hsl(var(--primary))]" /><span>{sound.ipa || 'áudio disponível'}</span>{sound.audioUrl && <a href={sound.audioUrl} target="_blank" rel="noreferrer" className="text-[hsl(var(--primary))]">ouvir áudio</a>}</div>)}</div></div>}
