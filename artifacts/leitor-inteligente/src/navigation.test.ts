@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   DICTIONARY_CARD,
   DICTIONARY_ROUTE,
+  EN_PTBR_DICTIONARY_CARD,
+  EN_PTBR_DICTIONARY_ROUTE,
   FANTASY_TRAIL_CARD,
   FANTASY_TRAIL_ROUTE,
   SPECIALISTS_CARD,
@@ -42,5 +44,12 @@ describe('entrada do dicionário pessoal', () => {
   it('deixa claro que os exemplos usam Ollama local', () => {
     expect(DICTIONARY_CARD.title).toBe('Dicionário pessoal');
     expect(DICTIONARY_CARD.description).toMatch(/Ollama local/i);
+  });
+});
+
+describe('entrada do dicionário inglês-português', () => {
+  it('aponta para a área pública EN–PT-BR', () => {
+    expect(EN_PTBR_DICTIONARY_CARD.href).toBe(EN_PTBR_DICTIONARY_ROUTE);
+    expect(EN_PTBR_DICTIONARY_CARD.title).toBe('Dicionário EN–PT-BR');
   });
 });

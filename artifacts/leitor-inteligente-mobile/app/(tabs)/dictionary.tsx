@@ -8,6 +8,7 @@ import { getPublicDictionaryEntry, PublicDictionaryEntry, PublicDictionarySummar
 export default function DictionaryScreen() {
   const colors = useColors('dark');
   const ready = true;
+  const [bilingual, setBilingual] = useState(false);
   const [publicQuery, setPublicQuery] = useState('');
   const [publicResults, setPublicResults] = useState<PublicDictionarySummary[]>([]);
   const [publicSelected, setPublicSelected] = useState<PublicDictionaryEntry | null>(null);
@@ -17,19 +18,23 @@ export default function DictionaryScreen() {
   const topPadding = Platform.OS === 'web' ? 67 : insets.top + 18;
   useEffect(() => {
     if (!publicQuery.trim()) { setPublicResults([]); setPublicError(''); return; }
-    const timer = setTimeout(() => { setPublicLoading(true); void searchPublicDictionary(publicQuery).then(setPublicResults).catch((error) => setPublicError(error instanceof Error ? error.message : 'Pesquisa indisponível.')).finally(() => setPublicLoading(false)); }, 350);
+    const timer = setTimeout(() => { setPublicLoading(true); void searchPublicDictionary(publicQuery, bilingual).then(setPublicResults).catch((error) => setPublicError(error instanceof Error ? error.message : 'Pesquisa indisponível.')).finally(() => setPublicLoading(false)); }, 350);
     return () => clearTimeout(timer);
-  }, [publicQuery]);
+  }, [publicQuery, bilingual]);
 
   if (!ready) return <View style={[styles.loading, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.primary} /></View>;
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={[styles.container, { paddingTop: topPadding, paddingBottom: 40 }]} keyboardShouldPersistTaps="handled">
-      <Text style={[styles.eyebrow, { color: colors.primary }]}>DICIONÁRIO PÚBLICO</Text>
-      <Text style={[styles.title, { color: colors.foreground }]}>Inglês, palavra por palavra.</Text>
+      <View style={styles.modeRow}>
+        <Pressable onPress={() => { setBilingual(false); setPublicSelected(null); }} style={[styles.modeButton, { backgroundColor: !bilingual ? colors.primary : colors.card, borderColor: colors.border }]}><Text style={{ color: !bilingual ? colors.primaryForeground : colors.mutedForeground }}>Dicionário público</Text></Pressable>
+        <Pressable onPress={() => { setBilingual(true); setPublicSelected(null); }} style={[styles.modeButton, { backgroundColor: bilingual ? colors.primary : colors.card, borderColor: colors.border }]}><Text style={{ color: bilingual ? colors.primaryForeground : colors.mutedForeground }}>EN–PT-BR</Text></Pressable>
+      </View>
+      <Text style={[styles.eyebrow, { color: colors.primary }]}>{bilingual ? 'DICIONÁRIO EN–PT-BR' : 'DICIONÁRIO PÚBLICO'}</Text>
+      <Text style={[styles.title, { color: colors.foreground }]}>{bilingual ? 'Inglês para português do Brasil.' : 'Inglês, palavra por palavra.'}</Text>
       <Text style={[styles.intro, { color: colors.mutedForeground }]}>Pesquise no acervo público. O verbete aberto fica guardado neste aparelho para consultar depois, sem baixar a base inteira.</Text>
-      <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}><Feather name="search" size={18} color={colors.mutedForeground} /><TextInput value={publicQuery} onChangeText={(value) => { setPublicQuery(value); setPublicSelected(null); }} placeholder="Pesquisar no dicionário público" placeholderTextColor={colors.mutedForeground} style={[styles.input, { color: colors.foreground }]} testID="public-dictionary-search" /></View>
+      <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}><Feather name="search" size={18} color={colors.mutedForeground} /><TextInput value={publicQuery} onChangeText={(value) => { setPublicQuery(value); setPublicSelected(null); }} placeholder={bilingual ? 'Pesquisar tradução EN–PT-BR' : 'Pesquisar no dicionário público'} placeholderTextColor={colors.mutedForeground} style={[styles.input, { color: colors.foreground }]} testID="public-dictionary-search" /></View>
       {publicLoading && <ActivityIndicator color={colors.primary} />}
-      {publicError ? <Text style={[styles.translation, { color: colors.destructive }]}>{publicError}</Text> : publicSelected ? <PublicEntryDetail entry={publicSelected} colors={colors} onBack={() => setPublicSelected(null)} /> : publicQuery.trim() ? <View style={styles.results}>{publicResults.map((entry) => <Pressable key={entry.id} onPress={() => { setPublicLoading(true); void getPublicDictionaryEntry(entry.id).then(setPublicSelected).catch((error) => setPublicError(error instanceof Error ? error.message : 'Verbete indisponível.')).finally(() => setPublicLoading(false)); }} style={[styles.result, { backgroundColor: colors.card, borderColor: colors.border }]}><View style={{ flex: 1 }}><Text style={[styles.term, { color: colors.foreground }]}>{entry.term}</Text><Text style={[styles.translation, { color: colors.mutedForeground }]}>{entry.partOfSpeech} · {entry.senseCount} sentidos</Text></View><Feather name="chevron-right" size={18} color={colors.mutedForeground} /></Pressable>)}</View> : null}
+      {publicError ? <Text style={[styles.translation, { color: colors.destructive }]}>{publicError}</Text> : publicSelected ? <PublicEntryDetail entry={publicSelected} colors={colors} onBack={() => setPublicSelected(null)} /> : publicQuery.trim() ? <View style={styles.results}>{publicResults.map((entry) => <Pressable key={entry.id} onPress={() => { setPublicLoading(true); void getPublicDictionaryEntry(entry.id, bilingual).then(setPublicSelected).catch((error) => setPublicError(error instanceof Error ? error.message : 'Verbete indisponível.')).finally(() => setPublicLoading(false)); }} style={[styles.result, { backgroundColor: colors.card, borderColor: colors.border }]}><View style={{ flex: 1 }}><Text style={[styles.term, { color: colors.foreground }]}>{entry.term}</Text><Text style={[styles.translation, { color: colors.mutedForeground }]}>{entry.partOfSpeech} · {entry.senseCount} sentidos</Text></View><Feather name="chevron-right" size={18} color={colors.mutedForeground} /></Pressable>)}</View> : null}
     </ScrollView>
   );
 }
@@ -49,6 +54,8 @@ function PublicEntryDetail({ entry, colors, onBack }: { entry: PublicDictionaryE
 const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   container: { paddingHorizontal: 20, gap: 14 },
+  modeRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
+  modeButton: { flex: 1, minHeight: 38, borderWidth: 1, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
   eyebrow: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1.4 },
   title: { fontFamily: 'Inter_700Bold', fontSize: 31, letterSpacing: -1.2 },
   intro: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19, marginBottom: 4 },

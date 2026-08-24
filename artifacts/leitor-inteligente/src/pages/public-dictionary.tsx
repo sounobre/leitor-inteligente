@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, BookOpen, CheckCircle2, Download, Library as LibraryIcon, LoaderCircle, PauseCircle, RefreshCw, Search, Volume2 } from 'lucide-react';
 
@@ -20,6 +20,13 @@ type ImportStatus = {
   totalLines: number | null;
   skippedLines: number;
   errorMessage?: string;
+  checkpointUpdatedAt: string | null;
+};
+
+type ImportMetrics = {
+  linesPerSecond: number | null;
+  etaSeconds: number | null;
+  checkpointAgeSeconds: number | null;
 };
 
 function useDebounce(value: string, delay: number) {
@@ -31,24 +38,24 @@ function useDebounce(value: string, delay: number) {
   return result;
 }
 
-export function PublicDictionaryPage() {
+export function PublicDictionaryPage({ endpoint = '/api/public-dictionary', title = 'Inglês, palavra por palavra.', eyebrow = 'DICIONÁRIO PÚBLICO' }: { endpoint?: string; title?: string; eyebrow?: string }) {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const debouncedQuery = useDebounce(query, 250);
   const results = useQuery<Summary[]>({
-    queryKey: ['public-dictionary', 'search', debouncedQuery],
+    queryKey: [endpoint, 'search', debouncedQuery],
     queryFn: async () => {
-      const response = await fetch(`/api/public-dictionary?query=${encodeURIComponent(debouncedQuery)}`);
+      const response = await fetch(`${endpoint}?query=${encodeURIComponent(debouncedQuery)}`);
       if (!response.ok) throw new Error('Falha na pesquisa');
       return response.json();
     },
     enabled: debouncedQuery.trim().length > 0,
   });
   const entry = useQuery<Entry>({
-    queryKey: ['public-dictionary', 'entry', selectedId],
+    queryKey: [endpoint, 'entry', selectedId],
     queryFn: async () => {
-      const response = await fetch(`/api/public-dictionary/${selectedId}`);
+      const response = await fetch(`${endpoint}/${selectedId}`);
       if (!response.ok) throw new Error('Falha ao carregar verbete');
       return response.json();
     },
@@ -66,6 +73,12 @@ export function PublicDictionaryPage() {
   });
   const [importState, setImportState] = useState<'idle' | 'starting' | 'error'>('idle');
   const [importMessage, setImportMessage] = useState('');
+  const previousCheckpoint = useRef<{ lines: number; at: number } | null>(null);
+  const [importMetrics, setImportMetrics] = useState<ImportMetrics>({
+    linesPerSecond: null,
+    etaSeconds: null,
+    checkpointAgeSeconds: null,
+  });
   const startImport = async () => {
     setImportState('starting');
     setImportMessage('');
@@ -81,6 +94,39 @@ export function PublicDictionaryPage() {
     }
   };
   const status = importStatus.data;
+  useEffect(() => {
+    if (!status?.checkpointUpdatedAt) {
+      previousCheckpoint.current = null;
+      setImportMetrics({ linesPerSecond: null, etaSeconds: null, checkpointAgeSeconds: null });
+      return;
+    }
+
+    const checkpointAt = Date.parse(status.checkpointUpdatedAt);
+    if (!Number.isFinite(checkpointAt)) return;
+    const previous = previousCheckpoint.current;
+    const elapsedSeconds = previous ? (checkpointAt - previous.at) / 1000 : 0;
+    const linesDelta = previous ? status.linesProcessed - previous.lines : 0;
+    const linesPerSecond = elapsedSeconds > 0 && linesDelta > 0 ? linesDelta / elapsedSeconds : null;
+    const remainingLines = status.totalLines === null ? null : Math.max(0, status.totalLines - status.linesProcessed);
+    setImportMetrics({
+      linesPerSecond,
+      etaSeconds: linesPerSecond && remainingLines !== null ? remainingLines / linesPerSecond : null,
+      checkpointAgeSeconds: Math.max(0, (Date.now() - checkpointAt) / 1000),
+    });
+    previousCheckpoint.current = { lines: status.linesProcessed, at: checkpointAt };
+  }, [status]);
+
+  const formatDuration = (seconds: number) => {
+    const rounded = Math.max(1, Math.round(seconds));
+    if (rounded < 60) return `${rounded}s`;
+    const minutes = Math.floor(rounded / 60);
+    const remainingSeconds = rounded % 60;
+    if (minutes < 60) return `${minutes}min${remainingSeconds ? ` ${remainingSeconds}s` : ''}`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return `${hours}h${remainingMinutes ? ` ${remainingMinutes}min` : ''}`;
+  };
+  const formatRate = (linesPerSecond: number) => `${Math.round(linesPerSecond).toLocaleString('pt-BR')} linhas/s`;
   const statusLabels: Record<ImportStatus['status'], string> = {
     IDLE: 'Ainda não importado',
     RUNNING: 'Importação em andamento',
@@ -94,9 +140,9 @@ export function PublicDictionaryPage() {
     <div className="page fade-up">
       <div className="top-row">
         <div>
-          <div className="eyebrow">Fonte aberta</div>
-          <h1 className="page-title">Dicionário <em>público.</em></h1>
-          <p className="lead">Pesquise a base aberta localmente importada. Ela é separada das suas referências pessoais e pode servir de ponto de partida para novos cards.</p>
+          <div className="eyebrow">{eyebrow === 'DICIONÁRIO PÚBLICO' ? 'Fonte aberta' : eyebrow}</div>
+          <h1 className="page-title">{title}</h1>
+          <p className="lead">{eyebrow === 'DICIONÁRIO PÚBLICO' ? 'Pesquise a base aberta localmente importada. Ela é separada das suas referências pessoais e pode servir de ponto de partida para novos cards.' : 'Pesquise traduções públicas de inglês para português do Brasil.'}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <div className="badge processing"><BookOpen size={14} /> Wiktionary / Wiktextract</div>
@@ -124,11 +170,17 @@ export function PublicDictionaryPage() {
             <RefreshCw size={14} className={importStatus.isFetching ? 'spin' : ''} /> Atualizar
           </button>
         </div>
-        {status?.totalLines ? <div className="mt-5">
+         {status?.totalLines ? <div className="mt-5">
           <div className="flex justify-between text-[12px] mb-2"><span>Progresso</span><strong>{progress}%</strong></div>
           <div className="h-2 rounded-full bg-[hsl(var(--muted))] overflow-hidden"><div className="h-full rounded-full bg-[hsl(var(--primary))] transition-all" style={{ width: `${progress}%` }} /></div>
           <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-2 mb-0">Checkpoint: {status.linesProcessed.toLocaleString('pt-BR')} de {status.totalLines.toLocaleString('pt-BR')} linhas</p>
-        </div> : status?.status === 'RUNNING' ? <p className="text-[12px] text-[hsl(var(--muted-foreground))] mt-4 mb-0">Calculando o total do arquivo; o checkpoint continua sendo salvo durante a carga.</p> : null}
+           {status.status === 'RUNNING' && importMetrics.etaSeconds !== null && importMetrics.linesPerSecond !== null
+             ? <p className="text-[12px] text-[hsl(var(--primary))] mt-2 mb-0">Velocidade média: {formatRate(importMetrics.linesPerSecond)} · faltam aproximadamente {formatDuration(importMetrics.etaSeconds)}</p>
+             : status.status === 'RUNNING'
+               ? <p className="text-[12px] text-[hsl(var(--muted-foreground))] mt-2 mb-0">Aguardando o próximo checkpoint para calcular o tempo restante.</p>
+               : null}
+         </div> : status?.status === 'RUNNING' ? <p className="text-[12px] text-[hsl(var(--muted-foreground))] mt-4 mb-0">Calculando o total do arquivo; o checkpoint continua sendo salvo durante a carga.</p> : null}
+         {status?.status === 'RUNNING' && importMetrics.checkpointAgeSeconds !== null && importMetrics.checkpointAgeSeconds >= 10 && <p className="text-[12px] text-[hsl(var(--muted-foreground))] mt-4 mb-0">Último checkpoint há {formatDuration(importMetrics.checkpointAgeSeconds)}. A importação pode estar processando um lote grande.</p>}
         {status?.status === 'ERROR' && <div className="error-state mt-4" role="alert">{status.errorMessage || 'A importação falhou. Atualize para consultar novamente ou tente iniciar de novo.'}</div>}
         {importStatus.isError && <div className="error-state mt-4" role="alert">Falha de rede ou banco ao consultar o progresso. Tente atualizar novamente.</div>}
       </div>

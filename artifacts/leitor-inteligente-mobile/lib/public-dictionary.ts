@@ -18,8 +18,9 @@ function apiBaseUrl() {
   return (process.env.EXPO_PUBLIC_API_URL ?? (domain ? `https://${domain}` : '')).replace(/\/+$/, '');
 }
 
-export async function getPublicDictionaryEntry(entryId: string): Promise<PublicDictionaryEntry> {
-  const key = `${CACHE_PREFIX}${entryId}`;
+export async function getPublicDictionaryEntry(entryId: string, bilingual = false): Promise<PublicDictionaryEntry> {
+  const endpoint = bilingual ? 'public-dictionary-en-ptbr' : 'public-dictionary';
+  const key = `${CACHE_PREFIX}${endpoint}/${entryId}`;
   const cached = await AsyncStorage.getItem(key);
   if (cached) {
     try {
@@ -30,17 +31,18 @@ export async function getPublicDictionaryEntry(entryId: string): Promise<PublicD
   }
   const baseUrl = apiBaseUrl();
   if (!baseUrl) throw new Error('A API do dicionário público não está configurada.');
-  const response = await fetch(`${baseUrl}/api/public-dictionary/${encodeURIComponent(entryId)}`);
+  const response = await fetch(`${baseUrl}/api/${endpoint}/${encodeURIComponent(entryId)}`);
   if (!response.ok) throw new Error('Não foi possível carregar o verbete público.');
   const entry = await response.json() as PublicDictionaryEntry;
   await AsyncStorage.setItem(key, JSON.stringify(entry));
   return entry;
 }
 
-export async function searchPublicDictionary(query: string): Promise<PublicDictionarySummary[]> {
+export async function searchPublicDictionary(query: string, bilingual = false): Promise<PublicDictionarySummary[]> {
   const baseUrl = apiBaseUrl();
   if (!baseUrl) throw new Error('A API do dicionário público não está configurada.');
-  const response = await fetch(`${baseUrl}/api/public-dictionary?query=${encodeURIComponent(query.trim())}&limit=30`);
+  const endpoint = bilingual ? 'public-dictionary-en-ptbr' : 'public-dictionary';
+  const response = await fetch(`${baseUrl}/api/${endpoint}?query=${encodeURIComponent(query.trim())}&limit=30`);
   if (!response.ok) throw new Error('Não foi possível pesquisar o dicionário público.');
   return await response.json() as PublicDictionarySummary[];
 }
