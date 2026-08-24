@@ -14,8 +14,10 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -128,7 +130,7 @@ public class EnglishPortugueseDictionaryImporter {
                     || "Portuguese".equalsIgnoreCase(languageName))) return;
                 String translated = text(item, "word").trim();
                 if (!translated.isBlank()) {
-                    String key = normalize(term) + "\u0000" + normalize(translated) + "\u0000" + pos;
+                    String key = normalize(term) + "\u0000" + translated + "\u0000" + pos;
                     result.add(new Translation(stableId(key), term.trim(), translated, pos));
                 }
             });
@@ -139,14 +141,22 @@ public class EnglishPortugueseDictionaryImporter {
     }
 
     private void flush(List<Translation> rows, String version) {
+        // A dump can contain the same translation more than once. Deduplicate by
+        // ID before batching because PostgreSQL rejects updating the same row
+        // twice in one INSERT ... ON CONFLICT statement.
+        Map<String, Translation> uniqueRows = new LinkedHashMap<>();
+        rows.forEach(row -> uniqueRows.putIfAbsent(row.id(), row));
+        List<Translation> deduplicated = new ArrayList<>(uniqueRows.values());
         transactions.executeWithoutResult(status -> {
             jdbc.batchUpdate("""
                 INSERT INTO english_portuguese_dictionary_entries
                   (id, source_id, term, normalized_term, translation, part_of_speech, dataset_version)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (source_id, normalized_term, translation, part_of_speech)
-                DO UPDATE SET term=excluded.term, dataset_version=excluded.dataset_version
-                """, rows, rows.size(), (statement, row) -> {
+                ON CONFLICT DO UPDATE SET
+                  term=excluded.term, normalized_term=excluded.normalized_term,
+                  translation=excluded.translation, part_of_speech=excluded.part_of_speech,
+                  dataset_version=excluded.dataset_version
+                """, deduplicated, deduplicated.size(), (statement, row) -> {
                     statement.setString(1, row.id());
                     statement.setString(2, SOURCE_ID);
                     statement.setString(3, row.term());
