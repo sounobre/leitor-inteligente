@@ -1,8 +1,10 @@
 package local.leitor.book.application.service;
 
 import java.util.List;
+import java.time.Instant;
 import java.util.stream.Collectors;
 import java.util.function.Consumer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import local.leitor.book.application.dto.ImportBookCommand;
@@ -18,6 +20,8 @@ import local.leitor.book.domain.exception.BookNotFoundException;
 import local.leitor.book.domain.model.Book;
 import local.leitor.book.domain.model.BookId;
 import local.leitor.book.domain.model.Chapter;
+import local.leitor.book.domain.model.VocabularyWord;
+import local.leitor.book.application.VocabularyExtractor;
 import local.leitor.book.infra.extraction.ContentExtractorFactory;
 import local.leitor.engine.application.port.out.StudyPlanGeneratorPort;
 import local.leitor.engine.domain.model.StudyPlan;
@@ -37,15 +41,27 @@ public class BookApplicationService implements
     private final BookRepositoryPort repository;
     private final ContentExtractorFactory extractorFactory;
     private final StudyPlanGeneratorPort studyPlanGenerator;
+    private final VocabularyExtractor vocabularyExtractor;
+
+    @Autowired
+    public BookApplicationService(
+        BookRepositoryPort repository,
+        ContentExtractorFactory extractorFactory,
+        StudyPlanGeneratorPort studyPlanGenerator,
+        VocabularyExtractor vocabularyExtractor
+    ) {
+        this.repository = repository;
+        this.extractorFactory = extractorFactory;
+        this.studyPlanGenerator = studyPlanGenerator;
+        this.vocabularyExtractor = vocabularyExtractor;
+    }
 
     public BookApplicationService(
         BookRepositoryPort repository,
         ContentExtractorFactory extractorFactory,
         StudyPlanGeneratorPort studyPlanGenerator
     ) {
-        this.repository = repository;
-        this.extractorFactory = extractorFactory;
-        this.studyPlanGenerator = studyPlanGenerator;
+        this(repository, extractorFactory, studyPlanGenerator, new VocabularyExtractor());
     }
 
     @Override
@@ -105,7 +121,9 @@ public class BookApplicationService implements
             studyPlan
         );
 
-        return repository.save(book);
+        Book saved = repository.save(book);
+        repository.saveVocabulary(saved.getId(), vocabularyExtractor.extract(chapters));
+        return saved;
     }
 
     @Override
@@ -119,6 +137,14 @@ public class BookApplicationService implements
             .orElseThrow(() -> new BookNotFoundException(id));
     }
 
+    @Transactional
+    public Book updateReadingPosition(BookId id, int chapter, int offset, int progress, Instant clientUpdatedAt) {
+        if (chapter < 1 || offset < 0 || progress < 0 || progress > 100) {
+            throw new local.leitor.shared.domain.BusinessValidationException("Posição de leitura inválida");
+        }
+        return repository.updateReadingPosition(id, chapter, offset, progress, clientUpdatedAt == null ? Instant.now() : clientUpdatedAt);
+    }
+
     @Override
     @Transactional
     public void deleteBook(BookId id) {
@@ -130,5 +156,23 @@ public class BookApplicationService implements
     @Override
     public List<Book> getReadyBooksForSync() {
         return repository.findReady();
+    }
+
+    public List<VocabularyWord> getVocabulary(BookId id, String query, int limit, int offset) {
+        List<VocabularyWord> words = repository.findVocabulary(id, query, limit, offset);
+        if (words.isEmpty() && (query == null || query.isBlank()) && offset == 0) {
+            Book book = getBookDetail(id);
+            List<VocabularyWord> extracted = vocabularyExtractor.extract(book.getChapters());
+            repository.saveVocabulary(id, extracted);
+            return extracted.stream().limit(limit).toList();
+        }
+        return words;
+    }
+
+    @Transactional
+    public int createVocabularyCards(BookId id, List<String> normalizedTerms) {
+        if (normalizedTerms == null || normalizedTerms.isEmpty()) return 0;
+        getBookDetail(id);
+        return repository.createVocabularyCards(id, normalizedTerms);
     }
 }

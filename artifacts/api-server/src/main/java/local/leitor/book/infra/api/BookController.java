@@ -3,9 +3,11 @@ package local.leitor.book.infra.api;
 import java.util.List;
 import java.util.Map;
 import java.io.IOException;
+import java.time.Instant;
 import org.springframework.http.MediaType;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import local.leitor.book.application.port.in.GetBookDetailUseCase;
@@ -24,6 +27,9 @@ import local.leitor.book.domain.model.BookId;
 import local.leitor.book.infra.api.dto.BookDetailResponse;
 import local.leitor.book.infra.api.dto.BookInputRequest;
 import local.leitor.book.infra.api.dto.BookResponse;
+import local.leitor.book.infra.api.dto.ReadingPositionRequest;
+import local.leitor.book.infra.api.dto.VocabularyCardsRequest;
+import local.leitor.book.domain.model.VocabularyWord;
 
 @RestController
 @RequestMapping("/api/books")
@@ -33,17 +39,20 @@ public class BookController {
     private final ImportBookUseCase importBookUseCase;
     private final GetBookDetailUseCase getBookDetailUseCase;
     private final DeleteBookUseCase deleteBookUseCase;
+    private final ObjectProvider<local.leitor.book.application.service.BookApplicationService> bookService;
 
     public BookController(
         ListBooksUseCase listBooksUseCase,
         ImportBookUseCase importBookUseCase,
         GetBookDetailUseCase getBookDetailUseCase,
-        DeleteBookUseCase deleteBookUseCase
+        DeleteBookUseCase deleteBookUseCase,
+        ObjectProvider<local.leitor.book.application.service.BookApplicationService> bookService
     ) {
         this.listBooksUseCase = listBooksUseCase;
         this.importBookUseCase = importBookUseCase;
         this.getBookDetailUseCase = getBookDetailUseCase;
         this.deleteBookUseCase = deleteBookUseCase;
+        this.bookService = bookService;
     }
 
     @GetMapping
@@ -99,9 +108,39 @@ public class BookController {
         return BookDetailResponse.fromDomain(book);
     }
 
+    @PostMapping("/{bookId}/reading-position")
+    public BookResponse updateReadingPosition(@PathVariable String bookId, @RequestBody ReadingPositionRequest request) {
+        Book book = ((local.leitor.book.application.service.BookApplicationService) getBookDetailUseCase)
+            .updateReadingPosition(BookId.of(bookId), request.chapter(), request.offset(), request.progress(), parseClientUpdatedAt(request.clientUpdatedAt()));
+        return BookResponse.fromDomain(book);
+    }
+
+    private Instant parseClientUpdatedAt(String value) {
+        if (value == null || value.isBlank()) return Instant.now();
+        try {
+            return Instant.parse(value);
+        } catch (java.time.DateTimeException ex) {
+            throw new local.leitor.shared.domain.BusinessValidationException("Data da posição de leitura inválida");
+        }
+    }
+
     @DeleteMapping("/{bookId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String bookId) {
         deleteBookUseCase.deleteBook(BookId.of(bookId));
+    }
+
+    @GetMapping("/{bookId}/vocabulary")
+    public List<VocabularyWord> vocabulary(@PathVariable String bookId,
+                                           @RequestParam(defaultValue = "") String query,
+                                           @RequestParam(defaultValue = "100") int limit,
+                                           @RequestParam(defaultValue = "0") int offset) {
+        return bookService.getObject().getVocabulary(BookId.of(bookId), query, limit, offset);
+    }
+
+    @PostMapping("/{bookId}/vocabulary/cards")
+    public Map<String, Integer> createVocabularyCards(@PathVariable String bookId,
+                                                       @RequestBody VocabularyCardsRequest request) {
+        return Map.of("created", bookService.getObject().createVocabularyCards(BookId.of(bookId), request.normalizedTerms()));
     }
 }
