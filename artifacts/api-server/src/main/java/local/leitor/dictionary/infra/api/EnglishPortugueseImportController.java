@@ -27,12 +27,18 @@ public class EnglishPortugueseImportController {
     @PostMapping("/import")
     public ResponseEntity<Map<String, String>> startImport() {
         EnglishPortugueseDictionaryImporter.ImportStatus status = importer.status();
-        if ("COMPLETED".equals(status.status()))
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("message", "A importação EN–PT-BR deste release já foi concluída."));
         if (!running.compareAndSet(false, true))
             return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("message", "A importação EN–PT-BR já está em andamento."));
+        if ("COMPLETED".equals(status.status())) {
+            try {
+                importer.resetForReimport();
+            } catch (RuntimeException exception) {
+                running.set(false);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Não foi possível preparar a reimportação EN–PT-BR."));
+            }
+        }
         CompletableFuture.runAsync(() -> {
             try {
                 importer.importDataset(EnglishPortugueseDictionaryImporter.DEFAULT_DATASET_URL,
@@ -42,7 +48,8 @@ public class EnglishPortugueseImportController {
             }
         });
         return ResponseEntity.accepted()
-            .body(Map.of("message", "A importação EN–PT-BR foi iniciada com checkpoint."));
+            .body(Map.of("message", "A importação EN–PT-BR foi iniciada" +
+                ("COMPLETED".equals(status.status()) ? " novamente." : " com checkpoint.")));
     }
 
     @GetMapping("/import/status")

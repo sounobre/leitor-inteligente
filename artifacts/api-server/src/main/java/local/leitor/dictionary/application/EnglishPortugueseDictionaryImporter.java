@@ -179,6 +179,14 @@ public class EnglishPortugueseDictionaryImporter {
             currentEntryCount(c.datasetVersion()), c.lastLine(), c.skippedLines(), c.errorMessage(), c.updatedAt());
     }
 
+    public void resetForReimport() {
+        transactions.executeWithoutResult(status -> {
+            jdbc.update("DELETE FROM english_portuguese_dictionary_entries WHERE source_id=?", SOURCE_ID);
+            jdbc.update("DELETE FROM public_dictionary_import_checkpoints WHERE source_id=?", SOURCE_ID);
+            jdbc.update("UPDATE public_dictionary_sources SET entry_count=0 WHERE id=?", SOURCE_ID);
+        });
+    }
+
     private Checkpoint checkpointFor(String version, String url) {
         List<Checkpoint> rows = jdbc.query("""
             SELECT dataset_version, source_url, last_line, skipped_lines, status, error_message, updated_at
