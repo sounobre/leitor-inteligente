@@ -4,13 +4,13 @@ import { Link, useLocation } from 'wouter';
 import { useHealthCheck, getHealthCheckQueryKey } from '@workspace/api-client-react';
 
 const navItems = [
-  { href: '/', label: 'Visão geral', icon: Compass },
-  { href: '/library', label: 'Biblioteca', icon: Library },
-  { href: '/specialists', label: 'Especialistas', icon: BookMarked },
-  { href: '/dictionary', label: 'Dicionário', icon: NotebookText },
-  { href: '/public-dictionary', label: 'Dicionário público', icon: Search },
-  { href: '/dictionary-en-ptbr', label: 'Dicionário EN–PT-BR', icon: Search },
-  { href: '/settings', label: 'Preferências', icon: Settings2 },
+  { href: '/', label: 'Visão geral', group: 'Comece aqui', icon: Compass },
+  { href: '/library', label: 'Biblioteca', group: 'Comece aqui', icon: Library },
+  { href: '/specialists', label: 'Especialistas', group: 'Estude melhor', icon: BookMarked },
+  { href: '/dictionary', label: 'Dicionário', group: 'Estude melhor', icon: NotebookText },
+  { href: '/public-dictionary', label: 'Dicionário público', group: 'Consulte', icon: Search },
+  { href: '/dictionary-en-ptbr', label: 'Dicionário EN–PT-BR', group: 'Consulte', icon: Search },
+  { href: '/settings', label: 'Preferências', group: 'Seu espaço', icon: Settings2 },
 ];
 
 function Brand() {
@@ -27,26 +27,45 @@ export function AppShell({ children }: { children: ReactNode }) {
   const health = useHealthCheck({ query: { queryKey: getHealthCheckQueryKey() } });
   const isActive = (href: string) => href === '/'
     ? location === '/'
-    : href === '/dictionary'
-      ? location === href
-      : location === href || location.startsWith(href);
+    : location === href || location.startsWith(`${href}/`);
+  const testIdFor = (prefix: string, label: string) => `${prefix}-${label.toLowerCase().replaceAll(' ', '-').replaceAll('–', '-')}`;
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Brand />
-        <div className="nav-label">Seu espaço</div>
-        <nav aria-label="Navegação principal">
-          {navItems.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className={`nav-link ${isActive(href) ? 'active' : ''}`} data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`}>
-              <Icon size={17} strokeWidth={1.8} />
-              <span>{label}</span>
-            </Link>
+        <div className="sidebar-top">
+          <Brand />
+          <div className="reading-rhythm" aria-label="Ritmo de leitura: quatro dias nesta semana">
+            <div className="rhythm-head">
+              <span>Ritmo de leitura</span>
+              <strong>4 dias</strong>
+            </div>
+            <div className="rhythm-track" aria-hidden="true"><span /></div>
+            <p>Um pouco hoje deixa o próximo capítulo mais perto.</p>
+          </div>
+        </div>
+        <nav className="primary-nav" aria-label="Navegação principal">
+          {navItems.map(({ href, label, group, icon: Icon }, index) => (
+            <div className={`nav-group nav-group-${group.toLowerCase().replaceAll(' ', '-')}`} key={href}>
+              {(index === 0 || navItems[index - 1].group !== group) && <div className="nav-label">{group}</div>}
+              <Link
+                href={href}
+                className={`nav-link ${isActive(href) ? 'active' : ''}`}
+                aria-current={isActive(href) ? 'page' : undefined}
+                data-testid={testIdFor('link-nav', label)}
+              >
+                <span className="nav-icon"><Icon size={17} strokeWidth={1.9} /></span>
+                <span className="nav-copy">{label}</span>
+                {isActive(href) && <span className="nav-active-mark" aria-hidden="true" />}
+              </Link>
+            </div>
           ))}
         </nav>
         <div className="sidebar-foot">
-          <strong>Um livro de cada vez.</strong>
-          <span>Prepare a leitura. Repare no que antes passava despercebido.</span>
+          <div className="sidebar-note">
+            <strong>Um livro de cada vez.</strong>
+            <span>Leia com contexto, sem descobrir a história antes da hora.</span>
+          </div>
           <div className="connection">
             <span className={`connection-dot ${health.data?.status === 'ok' ? 'ok' : ''}`} />
             {health.data?.status === 'ok' ? 'motor de estudo ligado' : 'verificando o motor'}
@@ -54,11 +73,21 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <header className="mobile-header">
-        <Brand />
+        <div className="mobile-top">
+          <Brand />
+          <span className="mobile-rhythm"><i aria-hidden="true" /> 4 dias</span>
+        </div>
         <nav className="mobile-nav" aria-label="Navegação móvel">
           {navItems.map(({ href, icon: Icon, label }) => (
-            <Link key={href} href={href} className={isActive(href) ? 'active' : ''} aria-label={label} data-testid={`link-mobile-${label.toLowerCase().replaceAll(' ', '-')}`}>
-              <Icon size={18} />
+            <Link
+              key={href}
+              href={href}
+              className={isActive(href) ? 'active' : ''}
+              aria-current={isActive(href) ? 'page' : undefined}
+              data-testid={testIdFor('link-mobile', label)}
+            >
+              <Icon size={17} strokeWidth={1.9} />
+              <span>{label}</span>
             </Link>
           ))}
         </nav>
